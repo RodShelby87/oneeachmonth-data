@@ -217,6 +217,63 @@ app.post('/api/ensure-slots', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── AI meaning lookup via Merriam-Webster ────────────────────────────
+app.post('/api/lookup-meaning', async (req, res) => {
+  try {
+    const { subId, expression } = req.body;
+    if (!expression) return res.status(400).json({ error: 'Missing expression' });
+
+    const key = process.env.MERRIAM_WEBSTER_KEY;
+    if (!key) return res.status(500).json({ error: 'API key not configured' });
+
+    // Try the full expression first, then fall back to first meaningful word
+    const queries = [
+      expression.toLowerCase().trim(),
+      expression.toLowerCase().replace(/["""'']/g, '').trim(),
+      expression.toLowerCase().split(' ').filter(w => w.length > 3)[0]
+    ].filter(Boolean);
+
+    let definition = '';
+
+    for (const query of queries) {
+      const url = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${encodeURIComponent(query)}?key=${key}`;
+      const r = await fetch(url);
+      if (!r.ok) continue;
+      const data = await r.json();
+
+      // MW returns an array — first item is the best match
+      if (!Array.isArray(data) || !data[0]) continue;
+
+      // If it returned strings instead of objects, it means "no match, here are suggestions"
+      if (typeof data[0] === 'string') continue;
+
+      // Look for a shortdef (short definition) first — most concise
+      if (data[0].shortdef && data[0].shortdef.length > 0) {
+        definition = data[0].shortdef[0];
+        break;
+      }
+
+      // Fall back to first full definition
+      const defs = data[0].def;
+      if (defs && defs[0] && defs[0].sseq) {
+        const sense = defs[0].sseq[0][0][1];
+        if (sense && sense.dt && sense.dt[0] && sense.dt[0][0] === 'text') {
+          // Strip MW markup like {bc}, {it}, {/it} etc.
+          definition = sense.dt[0][1].replace(/\{[^}]+\}/g, '').trim();
+          break;
+        }
+      }
+    }
+
+    if (!definition) return res.status(404).json({ error: 'No definition found' });
+
+    // Save it to the submission
+    if (subId) await Submission.findByIdAndUpdate(subId, { definition });
+
+    res.json({ definition });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post('/api/submissions/patch-meaning', async (req, res) => {
   try {
     const { subId, definition } = req.body;

@@ -8,241 +8,244 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --ink:#1c1917;--ink-soft:#57534e;--ink-faint:#a8a29e;
-    --page:#fffbf5;--card:#ffffff;--card2:#faf7f2;--rule:#e7e2d9;
-    --accent:#7c3aed;--accent-bg:#f3eeff;
-    --accent2:#ea580c;--accent2-bg:#fff4ee;
-    --gold:#d97706;--gold-bg:#fffbeb;
-    --success:#059669;--success-bg:#ecfdf5;--danger:#dc2626;
-    --shadow-sm:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
-    --shadow-md:0 4px 8px rgba(0,0,0,.06),0 12px 32px rgba(0,0,0,.08);
-    --radius:14px;--radius-sm:8px;
-    --sidebar-w:220px;
+    --ink:        #1c1917;
+    --ink-soft:   #57534e;
+    --ink-faint:  #a8a29e;
+    --page:       #fffbf5;
+    --card:       #ffffff;
+    --card2:      #faf7f2;
+    --rule:       #e7e2d9;
+    --accent:     #7c3aed;
+    --accent-bg:  #f3eeff;
+    --accent2:    #ea580c;
+    --accent2-bg: #fff4ee;
+    --gold:       #d97706;
+    --gold-bg:    #fffbeb;
+    --success:    #059669;
+    --success-bg: #ecfdf5;
+    --danger:     #dc2626;
+    --shadow-sm:  0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+    --shadow-md:  0 4px 8px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08);
+    --radius:     14px;
+    --radius-sm:  8px;
   }
   [data-theme="dark"] {
-    --ink:#f5f0e8;--ink-soft:#a8a29e;--ink-faint:#57534e;
-    --page:#131110;--card:#1e1b18;--card2:#252118;--rule:#2e2a26;
-    --accent:#a78bfa;--accent-bg:#1e1730;
-    --accent2:#fb923c;--accent2-bg:#271608;
-    --gold:#fbbf24;--gold-bg:#1c1504;
-    --success:#34d399;--success-bg:#022c22;--danger:#f87171;
-    --shadow-sm:0 1px 4px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);
-    --shadow-md:0 4px 8px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.25);
+    --ink:        #f5f0e8;
+    --ink-soft:   #a8a29e;
+    --ink-faint:  #57534e;
+    --page:       #131110;
+    --card:       #1e1b18;
+    --card2:      #252118;
+    --rule:       #2e2a26;
+    --accent:     #a78bfa;
+    --accent-bg:  #1e1730;
+    --accent2:    #fb923c;
+    --accent2-bg: #271608;
+    --gold:       #fbbf24;
+    --gold-bg:    #1c1504;
+    --success:    #34d399;
+    --success-bg: #022c22;
+    --danger:     #f87171;
+    --shadow-sm:  0 1px 4px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+    --shadow-md:  0 4px 8px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.25);
   }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  html{scroll-behavior:smooth;}
-  body{font-family:'Inter',sans-serif;background:var(--page);color:var(--ink);min-height:100vh;transition:background .25s,color .25s;}
 
-  /* ── DESKTOP LAYOUT ───────────────────────────────────── */
-  .app-shell{display:flex;min-height:100vh;}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; background: var(--page); color: var(--ink); min-height: 100vh; transition: background .25s, color .25s; }
 
-  /* Sidebar (desktop) */
-  .sidebar{
-    width:var(--sidebar-w);flex-shrink:0;
-    background:var(--card);border-right:1px solid var(--rule);
-    display:flex;flex-direction:column;
-    position:sticky;top:0;height:100vh;overflow-y:auto;
-    padding:24px 0 32px;
-  }
-  .sidebar-logo{padding:0 20px 20px;border-bottom:1px solid var(--rule);margin-bottom:16px;}
-  .logo{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:900;letter-spacing:-0.5px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-  .tagline{font-size:.65rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:2px;}
+  #app { max-width: 920px; margin: 0 auto; padding: 0 20px 80px; }
 
-  .sidebar-nav{flex:1;padding:0 10px;}
-  .nav-section-label{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);padding:10px 10px 6px;}
-  .nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:500;color:var(--ink-soft);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
-  .nav-item:hover{background:var(--card2);color:var(--ink);}
-  .nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600;}
-  .nav-item .nav-badge{margin-left:auto;font-size:.68rem;background:var(--accent);color:#fff;border-radius:10px;padding:1px 6px;font-weight:700;}
-  .nav-year-group{margin-bottom:4px;}
-  .nav-year-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:7px 12px;border-radius:var(--radius-sm);font-size:.8rem;font-weight:700;color:var(--ink-soft);cursor:pointer;border:none;background:none;transition:background .15s;}
-  .nav-year-btn:hover{background:var(--card2);}
-  .nav-year-btn .chevron{font-size:.7rem;transition:transform .2s;}
-  .nav-year-btn.collapsed .chevron{transform:rotate(-90deg);}
-  .nav-year-items{padding-left:8px;}
-  .nav-year-items.hidden{display:none;}
+  /* Header */
+  header { padding: 28px 0 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1.5px solid var(--rule); margin-bottom: 44px; }
+  .logo-wrap { display: flex; flex-direction: column; gap: 2px; }
+  .logo { font-family: 'Fraunces', serif; font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; line-height: 1; background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .tagline { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #user-greeting { font-size: 0.85rem; color: var(--ink-soft); display: flex; align-items: center; gap: 8px; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .theme-toggle { width: 44px; height: 24px; background: var(--rule); border-radius: 12px; border: none; cursor: pointer; position: relative; transition: background .2s; flex-shrink: 0; }
+  .theme-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--card); box-shadow: var(--shadow-sm); transition: transform .2s; }
+  [data-theme="dark"] .theme-toggle { background: var(--accent); }
+  [data-theme="dark"] .theme-toggle::after { transform: translateX(20px); }
 
-  .sidebar-bottom{padding:12px 10px 0;border-top:1px solid var(--rule);margin-top:auto;}
-  .user-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-sm);}
-  .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;flex-shrink:0;}
-  .user-name{font-size:.82rem;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .theme-toggle{width:36px;height:20px;background:var(--rule);border-radius:10px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
-  .theme-toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--card);box-shadow:var(--shadow-sm);transition:transform .2s;}
-  [data-theme="dark"] .theme-toggle{background:var(--accent);}
-  [data-theme="dark"] .theme-toggle::after{transform:translateX(16px);}
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: var(--radius-sm); font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s, transform .1s, box-shadow .15s; white-space: nowrap; }
+  .btn:active { transform: scale(.97); }
+  .btn:hover  { opacity: .88; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), #6d28d9); color: #fff; box-shadow: 0 4px 14px rgba(124,58,237,.35); }
+  [data-theme="dark"] .btn-primary { box-shadow: 0 4px 14px rgba(167,139,250,.25); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--rule); color: var(--ink-soft); }
+  .btn-ghost   { background: transparent; color: var(--ink-soft); padding: 7px 12px; }
+  .btn-accent2 { background: linear-gradient(135deg, var(--accent2), #c2410c); color: #fff; box-shadow: 0 4px 14px rgba(234,88,12,.3); }
+  .btn-sm      { padding: 6px 14px; font-size: 0.8rem; }
+  .btn-xs      { padding: 4px 10px; font-size: 0.76rem; }
 
-  /* Main content */
-  .main-content{flex:1;min-width:0;padding:32px 36px 60px;}
+  /* Forms */
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 0.78rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
+  .label-opt { font-weight: 400; color: var(--ink-faint); text-transform: none; letter-spacing: 0; font-size: 0.75rem; }
+  input, textarea, select { width: 100%; padding: 11px 14px; border: 1.5px solid var(--rule); border-radius: var(--radius-sm); font-family: 'Inter', sans-serif; font-size: 0.95rem; background: var(--card2); color: var(--ink); outline: none; transition: border-color .15s, box-shadow .15s; }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+  textarea { resize: vertical; min-height: 70px; }
+  select { appearance: none; cursor: pointer; }
+  .error-msg   { color: var(--danger);  font-size: 0.82rem; margin-top: 8px; }
+  .success-msg { color: var(--success); font-size: 0.82rem; margin-top: 8px; }
 
-  /* ── MOBILE LAYOUT ────────────────────────────────────── */
-  .mobile-header{display:none;position:sticky;top:0;z-index:50;background:var(--card);border-bottom:1px solid var(--rule);padding:12px 16px;align-items:center;gap:10px;}
-  .mobile-logo{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;flex:1;}
-  .hamburger{background:none;border:none;cursor:pointer;padding:4px;color:var(--ink);font-size:1.2rem;}
-  .mobile-nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90;opacity:0;transition:opacity .2s;}
-  .mobile-nav-overlay.open{opacity:1;}
-  .mobile-drawer{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--card);z-index:91;transform:translateX(-100%);transition:transform .25s;overflow-y:auto;padding:24px 0 32px;display:flex;flex-direction:column;}
-  .mobile-drawer.open{transform:translateX(0);}
-  .mobile-nav-content{flex:1;padding:0 10px;}
-  .mobile-drawer-bottom{padding:12px 10px 0;border-top:1px solid var(--rule);margin-top:auto;}
+  /* Auth */
+  #auth-panel { max-width: 440px; margin: 40px auto 0; }
+  .auth-card { background: var(--card); border-radius: var(--radius); padding: 40px; box-shadow: var(--shadow-md); border: 1px solid var(--rule); }
+  .auth-emoji { font-size: 2.5rem; margin-bottom: 14px; display: block; }
+  .auth-card h2 { font-family: 'Fraunces', serif; font-size: 1.7rem; font-weight: 700; margin-bottom: 6px; }
+  .auth-card .sub { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 28px; line-height: 1.5; }
+  .toggle-auth { text-align: center; margin-top: 20px; font-size: 0.84rem; color: var(--ink-soft); }
+  .toggle-auth a { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
 
-  /* Mobile bottom tab bar */
-  .bottom-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--rule);padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:50;}
-  .bottom-bar-inner{display:flex;justify-content:space-around;}
-  .bottom-tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 16px;border:none;background:none;cursor:pointer;color:var(--ink-faint);font-size:.65rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;transition:color .15s;}
-  .bottom-tab .tab-icon{font-size:1.2rem;}
-  .bottom-tab.active{color:var(--accent);}
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--card2); border-radius: var(--radius); padding: 4px; margin-bottom: 36px; border: 1px solid var(--rule); width: fit-content; }
+  .tab-btn { padding: 9px 22px; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; background: none; border: none; color: var(--ink-soft); border-radius: 10px; transition: all .15s; }
+  .tab-btn.active { background: var(--card); color: var(--accent); box-shadow: var(--shadow-sm); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
 
-  /* ── Section headings ─────────────────────────────────── */
-  .page-header{margin-bottom:28px;}
-  .page-title{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;margin-bottom:4px;}
-  .page-sub{font-size:.85rem;color:var(--ink-soft);}
-  .page-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  /* Badges & pills */
+  .month-pill { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, var(--accent-bg), var(--accent2-bg)); border: 1px solid var(--rule); color: var(--accent); font-size: 0.75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 5px 14px; border-radius: 20px; margin-bottom: 8px; }
+  .badge { font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; }
+  .badge-success { background: var(--success-bg); color: var(--success); }
+  .badge-warn    { background: var(--gold-bg);    color: var(--gold); }
+  .badge-neutral { background: var(--card2); color: var(--ink-soft); border: 1px solid var(--rule); }
 
-  /* ── Buttons ──────────────────────────────────────────── */
-  .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:opacity .15s,transform .1s;white-space:nowrap;}
-  .btn:active{transform:scale(.97);}
-  .btn:hover{opacity:.88;}
-  .btn-primary{background:linear-gradient(135deg,var(--accent),#6d28d9);color:#fff;box-shadow:0 4px 14px rgba(124,58,237,.3);}
-  .btn-outline{background:transparent;border:1.5px solid var(--rule);color:var(--ink-soft);}
-  .btn-ghost{background:transparent;color:var(--ink-soft);padding:7px 12px;}
-  .btn-accent2{background:linear-gradient(135deg,var(--accent2),#c2410c);color:#fff;box-shadow:0 4px 14px rgba(234,88,12,.25);}
-  .btn-sm{padding:6px 14px;font-size:.8rem;}
-  .btn-xs{padding:4px 10px;font-size:.76rem;}
-  .btn-icon{padding:7px;border-radius:var(--radius-sm);}
+  /* Section header row */
+  .section-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .section-title { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .section-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  /* ── Forms ────────────────────────────────────────────── */
-  .form-group{margin-bottom:14px;}
-  label{display:block;font-size:.75rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px;}
-  .label-opt{font-weight:400;color:var(--ink-faint);text-transform:none;letter-spacing:0;font-size:.73rem;}
-  input,textarea,select{width:100%;padding:10px 13px;border:1.5px solid var(--rule);border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:.92rem;background:var(--card2);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;}
-  input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
-  textarea{resize:vertical;}
-  .error-msg{color:var(--danger);font-size:.8rem;margin-top:6px;}
+  /* Submission card (my submissions) */
+  .my-sub-card { background: var(--card); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow-md); margin-bottom: 18px; border: 1px solid var(--rule); position: relative; overflow: hidden; }
+  .my-sub-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .expression-display { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 700; font-style: italic; color: var(--ink); line-height: 1.3; margin-bottom: 14px; }
+  .def-block { background: var(--card2); border-radius: var(--radius-sm); padding: 14px 18px; margin-top: 14px; border: 1px solid var(--rule); }
+  .def-label { font-size: 0.7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .def-block p { font-size: 0.88rem; color: var(--ink-soft); line-height: 1.65; }
+  .meta-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .meta-chip { font-size: 0.78rem; color: var(--ink-soft); background: var(--card2); border: 1px solid var(--rule); border-radius: 6px; padding: 5px 10px; display: flex; align-items: center; gap: 5px; word-break: break-all; }
+  .meta-chip a { color: var(--accent); text-decoration: none; }
+  .meta-chip a:hover { text-decoration: underline; }
 
-  /* ── Badges ───────────────────────────────────────────── */
-  .badge{font-family:'Inter',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:20px;}
-  .badge-success{background:var(--success-bg);color:var(--success);}
-  .badge-warn{background:var(--gold-bg);color:var(--gold);}
-  .badge-neutral{background:var(--card2);color:var(--ink-soft);border:1px solid var(--rule);}
+  /* All submissions grid */
+  #all-submissions { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .sub-card { background: var(--card); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); border: 1px solid var(--rule); transition: transform .18s, box-shadow .18s; position: relative; overflow: hidden; cursor: pointer; }
+  .sub-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0; transition: opacity .18s; }
+  .sub-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .sub-card:hover::after { opacity: 1; }
+  .sub-card.empty { background: var(--card2); box-shadow: none; border: 1.5px dashed var(--rule); cursor: default; }
+  .sub-card.empty:hover { transform: none; box-shadow: none; }
+  .sub-card.empty::after { display: none; }
+  .card-user { font-size: 0.72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent2); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .card-user .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; }
+  .card-expr { font-family: 'Fraunces', serif; font-size: 1.05rem; font-style: italic; font-weight: 600; color: var(--ink); line-height: 1.4; margin-bottom: 8px; }
+  .sub-card.empty .card-expr { color: var(--ink-faint); font-style: normal; font-size: 0.88rem; font-family: 'Inter', sans-serif; }
+  .card-def { font-size: 0.8rem; color: var(--ink-soft); line-height: 1.5; border-top: 1px solid var(--rule); padding-top: 8px; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .card-date { font-size: 0.7rem; color: var(--ink-faint); display: flex; align-items: center; gap: 4px; }
+  .card-comment-count { font-size: 0.72rem; color: var(--ink-soft); display: flex; align-items: center; gap: 4px; background: var(--card2); border: 1px solid var(--rule); border-radius: 20px; padding: 2px 8px; }
 
-  /* ── Auth ─────────────────────────────────────────────── */
-  #auth-panel{max-width:420px;margin:60px auto 0;}
-  .auth-card{background:var(--card);border-radius:var(--radius);padding:36px;box-shadow:var(--shadow-md);border:1px solid var(--rule);}
-  .auth-emoji{font-size:2rem;margin-bottom:12px;display:block;}
-  .auth-card h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;margin-bottom:5px;}
-  .auth-card .sub{font-size:.83rem;color:var(--ink-soft);margin-bottom:24px;line-height:1.5;}
-  .toggle-auth{text-align:center;margin-top:16px;font-size:.82rem;color:var(--ink-soft);}
-  .toggle-auth a{color:var(--accent);font-weight:600;cursor:pointer;text-decoration:none;}
-
-  /* ── My submission cards ──────────────────────────────── */
-  .my-sub-card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-sm);margin-bottom:14px;border:1px solid var(--rule);position:relative;overflow:hidden;}
-  .my-sub-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
-  .expression-display{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:700;font-style:italic;color:var(--ink);line-height:1.3;margin-bottom:10px;}
-  .def-block{background:var(--card2);border-radius:var(--radius-sm);padding:12px 16px;margin-top:10px;border:1px solid var(--rule);}
-  .def-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;}
-  .def-block p{font-size:.85rem;color:var(--ink-soft);line-height:1.6;}
-  .meta-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
-  .meta-chip{font-size:.75rem;color:var(--ink-soft);background:var(--card2);border:1px solid var(--rule);border-radius:6px;padding:4px 9px;display:flex;align-items:center;gap:4px;word-break:break-all;}
-  .meta-chip a{color:var(--accent);text-decoration:none;}
-
-  /* ── All expressions grid ─────────────────────────────── */
-  .sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;}
-  .sub-card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);border:1px solid var(--rule);transition:transform .18s,box-shadow .18s;position:relative;overflow:hidden;cursor:pointer;}
-  .sub-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity .18s;}
-  .sub-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
-  .sub-card:hover::after{opacity:1;}
-  .sub-card.empty{background:var(--card2);box-shadow:none;border:1.5px dashed var(--rule);cursor:default;}
-  .sub-card.empty:hover{transform:none;box-shadow:none;}
-  .sub-card.empty::after{display:none;}
-  .card-user{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
-  .card-user .dot{width:5px;height:5px;border-radius:50%;background:var(--accent2);flex-shrink:0;}
-  .card-expr{font-family:'Fraunces',serif;font-size:1rem;font-style:italic;font-weight:600;color:var(--ink);line-height:1.4;margin-bottom:6px;}
-  .sub-card.empty .card-expr{color:var(--ink-faint);font-style:normal;font-size:.85rem;font-family:'Inter',sans-serif;}
-  .card-def{font-size:.78rem;color:var(--ink-soft);line-height:1.5;border-top:1px solid var(--rule);padding-top:7px;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  .card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
-  .card-date{font-size:.68rem;color:var(--ink-faint);}
-  .card-comment-count{font-size:.7rem;color:var(--ink-soft);display:flex;align-items:center;gap:3px;background:var(--card2);border:1px solid var(--rule);border-radius:20px;padding:2px 7px;}
+  /* Month nav */
+  .month-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .month-btn { padding: 7px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--rule); background: var(--card); color: var(--ink-soft); transition: all .15s; }
+  .month-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .month-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 3px 10px rgba(124,58,237,.3); }
 
   /* Stats */
-  .stats-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
-  .stat-chip{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius-sm);padding:10px 14px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:8px;}
-  .stat-num{font-family:'Fraunces',serif;font-size:1.25rem;font-weight:900;color:var(--accent);line-height:1;}
-  .stat-label{font-size:.73rem;color:var(--ink-soft);}
+  .stats-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+  .stat-chip { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 10px 16px; box-shadow: var(--shadow-sm); }
+  .stat-num { font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 900; color: var(--accent); line-height: 1; }
+  .stat-label { font-size: 0.75rem; color: var(--ink-soft); line-height: 1.3; }
 
-  /* ── Month tabs (inside All view) ─────────────────────── */
-  .year-tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
-  .year-tab-btn{padding:6px 16px;border-radius:20px;font-size:.78rem;font-weight:700;cursor:pointer;border:1.5px solid var(--rule);background:var(--card);color:var(--ink-soft);transition:all .15s;letter-spacing:.04em;}
-  .year-tab-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .year-tab-btn.active{background:var(--ink);color:var(--page);border-color:var(--ink);}
-  .month-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px;}
-  .month-tab-btn{padding:6px 14px;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;border:1.5px solid var(--rule);background:var(--card);color:var(--ink-soft);transition:all .15s;}
-  .month-tab-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .month-tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 3px 10px rgba(124,58,237,.3);}
+  /* Spinner */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── Spinner ──────────────────────────────────────────── */
-  .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;}
-  @keyframes spin{to{transform:rotate(360deg);}}
+  /* Modal overlay */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--card); border-radius: var(--radius); width: 100%; max-width: 580px; max-height: 88vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.25); border: 1px solid var(--rule); transform: translateY(16px); transition: transform .2s; }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-header { padding: 24px 28px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; position: sticky; top: 0; background: var(--card); z-index: 1; padding-bottom: 16px; border-bottom: 1px solid var(--rule); }
+  .modal-close { background: var(--card2); border: 1px solid var(--rule); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; color: var(--ink-soft); flex-shrink: 0; transition: background .15s; }
+  .modal-close:hover { background: var(--rule); }
+  .modal-body { padding: 20px 28px 28px; }
 
-  /* ── Modal ────────────────────────────────────────────── */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .2s;pointer-events:none;}
-  .modal-overlay.open{opacity:1;pointer-events:all;}
-  .modal{background:var(--card);border-radius:var(--radius);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);border:1px solid var(--rule);transform:translateY(12px);transition:transform .2s;}
-  .modal-overlay.open .modal{transform:translateY(0);}
-  .modal-header{padding:20px 24px 16px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:sticky;top:0;background:var(--card);z-index:1;border-bottom:1px solid var(--rule);}
-  .modal-title{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;}
-  .modal-subtitle{font-size:.8rem;color:var(--ink-soft);margin-top:2px;}
-  .modal-close{background:var(--card2);border:1px solid var(--rule);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;color:var(--ink-soft);flex-shrink:0;transition:background .15s;}
-  .modal-close:hover{background:var(--rule);}
-  .modal-body{padding:18px 24px 24px;}
+  /* Modal expression */
+  .modal-expr { font-family: 'Fraunces', serif; font-size: 1.6rem; font-style: italic; font-weight: 700; color: var(--ink); line-height: 1.3; margin-bottom: 4px; }
+  .modal-user { font-size: 0.78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent2); margin-bottom: 16px; }
 
   /* Comments */
-  .modal-expr{font-family:'Fraunces',serif;font-size:1.4rem;font-style:italic;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:4px;}
-  .modal-user{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:14px;}
-  .comments-section{margin-top:20px;}
-  .comments-title{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
-  .comment{display:flex;gap:9px;margin-bottom:14px;}
-  .comment-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px;}
-  .comment-body{flex:1;}
-  .comment-meta{font-size:.7rem;color:var(--ink-faint);margin-bottom:3px;display:flex;gap:7px;align-items:center;}
-  .comment-author{font-weight:700;color:var(--ink-soft);}
-  .comment-text{font-size:.85rem;color:var(--ink);line-height:1.5;background:var(--card2);border-radius:0 var(--radius-sm) var(--radius-sm) var(--radius-sm);padding:9px 13px;border:1px solid var(--rule);}
-  .reply-btn{font-size:.7rem;color:var(--accent);cursor:pointer;background:none;border:none;padding:3px 0;font-weight:600;margin-top:3px;}
-  .replies{margin-left:35px;margin-top:6px;}
-  .new-comment-box{display:flex;gap:9px;margin-top:14px;align-items:flex-start;}
-  .new-comment-box textarea{min-height:46px;font-size:.85rem;}
-  .no-comments{font-size:.83rem;color:var(--ink-faint);text-align:center;padding:16px 0;}
+  .comments-section { margin-top: 24px; }
+  .comments-title { font-size: 0.8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .comment { display: flex; gap: 10px; margin-bottom: 16px; }
+  .comment-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; color: #fff; flex-shrink: 0; margin-top: 2px; }
+  .comment-body { flex: 1; }
+  .comment-meta { font-size: 0.72rem; color: var(--ink-faint); margin-bottom: 4px; display: flex; gap: 8px; align-items: center; }
+  .comment-author { font-weight: 700; color: var(--ink-soft); }
+  .comment-text { font-size: 0.88rem; color: var(--ink); line-height: 1.55; background: var(--card2); border-radius: 0 var(--radius-sm) var(--radius-sm) var(--radius-sm); padding: 10px 14px; border: 1px solid var(--rule); }
+  .reply-btn { font-size: 0.72rem; color: var(--accent); cursor: pointer; background: none; border: none; padding: 4px 0; font-weight: 600; margin-top: 4px; }
+  .reply-btn:hover { text-decoration: underline; }
+  .replies { margin-left: 38px; margin-top: 8px; }
+  .new-comment-box { display: flex; gap: 10px; margin-top: 16px; align-items: flex-start; }
+  .new-comment-box textarea { min-height: 52px; font-size: 0.88rem; }
+  .no-comments { font-size: 0.85rem; color: var(--ink-faint); text-align: center; padding: 20px 0; }
 
-  /* Empty state */
-  .empty-state{text-align:center;padding:48px 20px;color:var(--ink-soft);}
-  .empty-state .empty-icon{font-size:2.5rem;margin-bottom:12px;}
-  .empty-state h3{font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:6px;color:var(--ink);}
-  .empty-state p{font-size:.85rem;line-height:1.5;}
+  /* Month picker modal */
+  .month-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .month-pick-btn { padding: 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--rule); background: var(--card2); color: var(--ink-soft); font-size: 0.82rem; font-weight: 600; cursor: pointer; text-align: center; transition: all .15s; }
+  .month-pick-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .month-pick-btn.taken { opacity: .4; cursor: not-allowed; border-style: dashed; }
+  .year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .year-nav button { background: var(--card2); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 6px 14px; cursor: pointer; color: var(--ink-soft); font-size: 0.85rem; font-weight: 600; transition: background .15s; }
+  .year-nav button:hover { background: var(--rule); }
+  .year-label { font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 700; }
 
-  /* ── RESPONSIVE ───────────────────────────────────────── */
-  @media(max-width:768px){
-    .sidebar{display:none;}
-    .mobile-header{display:flex;}
-    .bottom-bar{display:block;}
-    .main-content{padding:16px 14px 80px;}
-    .sub-grid{grid-template-columns:1fr 1fr;}
-    .modal{max-height:92vh;}
-    .modal-body,.modal-header{padding-left:16px;padding-right:16px;}
-  }
-  @media(max-width:480px){
-    .sub-grid{grid-template-columns:1fr;}
-    #auth-panel{margin-top:20px;}
-    .auth-card{padding:24px 16px;}
-    .stats-row .stat-chip{flex:1;justify-content:center;}
+  /* ── Year/month tabs (All view) ──────────────────────────── */
+  .year-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .year-tab-btn { padding: 5px 14px; border-radius: 20px; font-size: .78rem; font-weight: 700; cursor: pointer; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); transition: all .15s; letter-spacing: .04em; }
+  .year-tab-btn:hover { background: var(--ink); color: var(--page); }
+  .year-tab-btn.active { background: var(--ink); color: var(--page); }
+  .month-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .month-tab-btn { padding: 6px 14px; border-radius: 20px; font-size: .78rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--rule); background: var(--card); color: var(--ink-soft); transition: all .15s; }
+  .month-tab-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .month-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 3px 10px rgba(124,58,237,.3); }
+
+  @media (max-width: 520px) {
+    header { flex-direction: column; align-items: flex-start; }
+    .header-right { width: 100%; justify-content: space-between; }
+    .auth-card { padding: 28px 20px; }
+    #all-submissions { grid-template-columns: 1fr; }
+    .tabs { width: 100%; }
+    .tab-btn { flex: 1; text-align: center; }
+    .modal { max-height: 95vh; }
+    .modal-body { padding: 14px 16px 20px; }
+    .modal-header { padding: 16px 16px 12px; }
   }
 </style>
 </head>
 <body>
+<div id="app">
+  <header>
+    <div class="logo-wrap">
+      <div class="logo">OneEachMonth</div>
+      <div class="tagline">One expression. Every month.</div>
+    </div>
+    <div class="header-right">
+      <div id="user-greeting"></div>
+      <span style="font-size:.85rem">☀️</span>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode"></button>
+      <span style="font-size:.85rem">🌙</span>
+    </div>
+  </header>
 
-<!-- ── AUTH (shown when not logged in) ────────────────────────────── -->
-<div id="auth-root" style="display:none;padding:20px">
-  <div id="auth-panel">
+  <!-- Auth -->
+  <div id="auth-panel" style="display:none">
     <div class="auth-card">
       <span class="auth-emoji" id="auth-emoji">👋</span>
       <h2 id="auth-title">Welcome back</h2>
@@ -250,19 +253,19 @@
       <div id="reg-fields" style="display:none">
         <div class="form-group">
           <label>Choose a username</label>
-          <input id="reg-username" type="text" placeholder="your_name" autocomplete="username"/>
+          <input id="reg-username" type="text" placeholder="your_name" autocomplete="username" />
         </div>
       </div>
       <div class="form-group">
         <label id="identifier-label">Username</label>
-        <input id="auth-identifier" type="text" placeholder="your_name" autocomplete="username"/>
+        <input id="auth-identifier" type="text" placeholder="your_name" autocomplete="username" />
       </div>
       <div class="form-group">
         <label>Email</label>
-        <input id="auth-email" type="email" placeholder="you@email.com" autocomplete="email"/>
+        <input id="auth-email" type="email" placeholder="you@email.com" autocomplete="email" />
       </div>
       <div id="auth-error" class="error-msg"></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px" onclick="submitAuth()">
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="submitAuth()">
         <span id="auth-btn-text">Sign in</span>
       </button>
       <div class="toggle-auth" id="auth-toggle">
@@ -270,75 +273,41 @@
       </div>
     </div>
   </div>
-</div>
 
-<!-- ── MAIN APP SHELL ──────────────────────────────────────────────── -->
-<div id="app-root" style="display:none">
-  <div class="app-shell">
-
-    <!-- Desktop sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <div class="logo">OneEachMonth</div>
-        <div class="tagline">One expression. Every month.</div>
-      </div>
-      <nav class="sidebar-nav" id="sidebar-nav">
-        <!-- Filled by JS -->
-      </nav>
-      <div class="sidebar-bottom">
-        <div class="user-row">
-          <div class="avatar" id="sidebar-avatar"></div>
-          <span class="user-name" id="sidebar-username"></span>
-          <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode"></button>
-        </div>
-        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:8px" onclick="signOut()">Sign out</button>
-      </div>
-    </aside>
-
-    <!-- Mobile header -->
-    <div class="mobile-header">
-      <button class="hamburger" onclick="openDrawer()">☰</button>
-      <div class="mobile-logo">OneEachMonth</div>
-      <button class="theme-toggle" onclick="toggleTheme()"></button>
+  <!-- Main -->
+  <div id="main-panel" style="display:none">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('submit',this)">✍️ My Submissions</button>
+      <button class="tab-btn" onclick="switchTab('all',this)">🌍 All Expressions</button>
     </div>
 
-    <!-- Mobile drawer overlay -->
-    <div class="mobile-nav-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
-    <div class="mobile-drawer" id="mobile-drawer">
-      <div class="sidebar-logo" style="padding:0 16px 16px">
-        <div class="logo">OneEachMonth</div>
-        <div class="tagline">One expression. Every month.</div>
-      </div>
-      <nav class="mobile-nav-content" id="drawer-nav"></nav>
-      <div class="mobile-drawer-bottom">
-        <div class="user-row">
-          <div class="avatar" id="drawer-avatar"></div>
-          <span class="user-name" id="drawer-username"></span>
+    <!-- My Submissions tab -->
+    <div class="tab-pane active" id="tab-submit">
+      <div class="section-header">
+        <div>
+          <div class="month-pill">📅 <span id="current-month-label"></span></div>
+          <div class="section-title">My Submissions <span class="badge" id="my-status-badge"></span></div>
         </div>
-        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:8px" onclick="signOut()">Sign out</button>
+        <div class="section-actions">
+          <button class="btn btn-accent2 btn-sm" onclick="openNewSubmission()">✨ New submission</button>
+        </div>
       </div>
+      <div id="my-submissions-list"></div>
     </div>
 
-    <!-- Main content -->
-    <main class="main-content" id="main-content">
-      <!-- Filled by JS -->
-    </main>
-
-    <!-- Mobile bottom bar -->
-    <div class="bottom-bar">
-      <div class="bottom-bar-inner">
-        <button class="bottom-tab active" id="btab-mine" onclick="showView('mine')">
-          <span class="tab-icon">✍️</span>Mine
-        </button>
-        <button class="bottom-tab" id="btab-all" onclick="showView('all')">
-          <span class="tab-icon">🌍</span>All
-        </button>
+    <!-- All Expressions tab -->
+    <div class="tab-pane" id="tab-all">
+      <div class="month-nav" id="month-nav"></div>
+      <div class="stats-row" id="stats-row"></div>
+      <div class="section-title" style="margin-bottom:20px">
+        Expressions <span class="badge badge-neutral" id="all-count-badge"></span>
       </div>
+      <div id="all-submissions"></div>
     </div>
   </div>
 </div>
 
-<!-- ── CARD DETAIL MODAL ───────────────────────────────────────────── -->
+<!-- Card detail modal -->
 <div class="modal-overlay" id="card-modal" onclick="closeModalOnBg(event,'card-modal')">
   <div class="modal">
     <div class="modal-header">
@@ -353,11 +322,11 @@
       <div class="comments-section">
         <div class="comments-title">💬 Comments <span id="comments-count"></span></div>
         <div id="comments-list"></div>
-        <div class="new-comment-box">
+        <div class="new-comment-box" id="new-comment-box">
           <div class="comment-avatar" id="new-comment-avatar"></div>
           <div style="flex:1">
             <textarea id="new-comment-text" placeholder="Add a comment…" rows="2"></textarea>
-            <div style="margin-top:5px">
+            <div style="display:flex;gap:8px;margin-top:6px">
               <button class="btn btn-primary btn-sm" onclick="postComment()">Post</button>
             </div>
           </div>
@@ -367,533 +336,584 @@
   </div>
 </div>
 
-<!-- ── NEW SUBMISSION MODAL ────────────────────────────────────────── -->
+<!-- New submission modal -->
 <div class="modal-overlay" id="new-sub-modal" onclick="closeModalOnBg(event,'new-sub-modal')">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
       <div>
-        <div class="modal-title" id="new-sub-title">New Expression</div>
-        <div class="modal-subtitle" id="new-sub-subtitle"></div>
+        <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700" id="new-sub-title">New Expression</div>
+        <div style="font-size:0.82rem;color:var(--ink-soft);margin-top:2px" id="new-sub-subtitle"></div>
       </div>
       <button class="modal-close" onclick="closeModal('new-sub-modal')">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
+        <label>Month</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1;font-size:.92rem;font-weight:600;color:var(--ink)" id="ns-month-display"></div>
+          <button class="btn btn-outline btn-xs" onclick="openMonthPickerFromModal()">Change</button>
+        </div>
+      </div>
+      <div class="form-group">
         <label>Expression</label>
-        <input id="ns-expr" type="text" placeholder='"Hit the nail on the head"'/>
+        <input id="ns-expr" type="text" placeholder='"Hit the nail on the head"' />
       </div>
       <div class="form-group">
-        <label>Your own example <span class="label-opt">optional</span></label>
-        <textarea id="ns-example" placeholder="Write a sentence using this expression…" rows="2"></textarea>
+        <label>Link <span class="label-opt">(optional — where you found it)</span></label>
+        <input id="ns-link" type="url" placeholder="https://..." />
       </div>
       <div class="form-group">
-        <label>Source link <span class="label-opt">optional</span></label>
-        <input id="ns-link" type="url" placeholder="https://…"/>
-      </div>
-      <div class="form-group">
-        <label>Comment <span class="label-opt">optional</span></label>
-        <textarea id="ns-comment" placeholder="Anything you want to add…" rows="2"></textarea>
+        <label>Comment <span class="label-opt">(optional)</span></label>
+        <textarea id="ns-comment" placeholder="Anything you want to say about this expression…" rows="2"></textarea>
       </div>
       <div id="ns-error" class="error-msg"></div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="saveNewSubmission()">
-        ✨ Save
+        ✨ Save expression
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Month picker modal -->
+<div class="modal-overlay" id="month-modal" onclick="closeModalOnBg(event,'month-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700">Pick a month</div>
+      <button class="modal-close" onclick="closeModal('month-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="year-nav">
+        <button onclick="changePickerYear(-1)">← Prev</button>
+        <span class="year-label" id="picker-year"></span>
+        <button onclick="changePickerYear(1)">Next →</button>
+      </div>
+      <div class="month-picker-grid" id="month-picker-grid"></div>
     </div>
   </div>
 </div>
 
 <script>
 const API_BASE = 'https://oneeachmonth-data.onrender.com';
-const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 let currentUser    = null;
 let allSubmissions = [];
-let comments       = {};
+let comments       = {};  // keyed by submissionId
 let selectedMonth  = null;
 let selectedYear   = null;
-let activeSubId    = null;
-let pendingMonth   = null;
 let isRegister     = false;
-let currentView    = 'mine'; // 'mine' | 'all'
+let activeSubId    = null;  // for comment modal
+let pickerYear     = new Date().getFullYear();
+let pendingMonth   = null;  // month selected in picker for new submission
 
-// ── Theme ──────────────────────────────────────────────────────────
-function initTheme(){
-  document.documentElement.setAttribute('data-theme', localStorage.getItem('oem_theme')||'light');
+// ── Theme ─────────────────────────────────────────────────────────────
+function initTheme() {
+  const saved = localStorage.getItem('oem_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
 }
-function toggleTheme(){
-  const next = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
-  document.documentElement.setAttribute('data-theme',next);
-  localStorage.setItem('oem_theme',next);
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('oem_theme', next);
 }
 initTheme();
 
-// ── Init ───────────────────────────────────────────────────────────
-(async function init(){
+// ── Init ──────────────────────────────────────────────────────────────
+(async function init() {
   const saved = localStorage.getItem('oem_user');
-  if(saved){ currentUser=JSON.parse(saved); await showApp(); }
-  else showAuthScreen();
+  if (saved) { currentUser = JSON.parse(saved); await showMain(); }
+  else showAuth();
 })();
 
-// ── Auth ───────────────────────────────────────────────────────────
-function showAuthScreen(){
-  document.getElementById('auth-root').style.display='';
-  document.getElementById('app-root').style.display='none';
+// ── Auth ──────────────────────────────────────────────────────────────
+function showAuth() {
+  document.getElementById('auth-panel').style.display = '';
+  document.getElementById('main-panel').style.display = 'none';
+  document.getElementById('user-greeting').innerHTML = '';
 }
-function toggleAuthMode(){
-  isRegister=!isRegister;
-  document.getElementById('auth-emoji').textContent   = isRegister?'🌱':'👋';
-  document.getElementById('auth-title').textContent   = isRegister?'Create account':'Welcome back';
-  document.getElementById('auth-sub').textContent     = isRegister?"Pick a username and enter your email — that's all you need.":'Enter your username and email to continue.';
-  document.getElementById('reg-fields').style.display = isRegister?'':'none';
-  document.getElementById('identifier-label').textContent = isRegister?'Username (confirm)':'Username';
-  document.getElementById('auth-btn-text').textContent    = isRegister?'Create account':'Sign in';
+function toggleAuthMode() {
+  isRegister = !isRegister;
+  document.getElementById('auth-emoji').textContent = isRegister ? '🌱' : '👋';
+  document.getElementById('auth-title').textContent  = isRegister ? 'Create account' : 'Welcome back';
+  document.getElementById('auth-sub').textContent    = isRegister ? "Pick a username and enter your email — that's all you need." : 'Enter your username and email to continue.';
+  document.getElementById('reg-fields').style.display = isRegister ? '' : 'none';
+  document.getElementById('identifier-label').textContent = isRegister ? 'Username (confirm)' : 'Username';
+  document.getElementById('auth-btn-text').textContent    = isRegister ? 'Create account' : 'Sign in';
   document.getElementById('auth-toggle').innerHTML = isRegister
     ? 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>'
     : "Don't have an account? <a onclick=\"toggleAuthMode()\">Create one</a>";
-  document.getElementById('auth-error').textContent='';
+  document.getElementById('auth-error').textContent = '';
 }
-async function submitAuth(){
+async function submitAuth() {
   const identifier = document.getElementById('auth-identifier').value.trim();
   const email      = document.getElementById('auth-email').value.trim();
   const errEl      = document.getElementById('auth-error');
-  errEl.textContent='';
-  if(!identifier||!email){errEl.textContent='Please fill in both fields.';return;}
-  try{
-    let endpoint,body;
-    if(isRegister){
-      const username=document.getElementById('reg-username').value.trim();
-      if(!username){errEl.textContent='Please choose a username.';return;}
-      endpoint='/api/register'; body={username,email,password:'oem-'+Date.now()};
+  errEl.textContent = '';
+  if (!identifier || !email) { errEl.textContent = 'Please fill in both fields.'; return; }
+  try {
+    let endpoint, body;
+    if (isRegister) {
+      const username = document.getElementById('reg-username').value.trim();
+      if (!username) { errEl.textContent = 'Please choose a username.'; return; }
+      endpoint = '/api/register';
+      body = { username, email, password: 'oem-' + Date.now() };
     } else {
-      endpoint='/api/login-no-password'; body={identifier,email};
+      endpoint = '/api/login-no-password';
+      body = { identifier, email };
     }
-    const r=await fetch(API_BASE+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const data=await r.json();
-    if(!r.ok){errEl.textContent=data.error||'Something went wrong.';return;}
-    currentUser=data;
-    localStorage.setItem('oem_user',JSON.stringify(currentUser));
-    await showApp();
-  } catch(e){ errEl.textContent='Cannot reach server. Check your connection.'; }
+    const r = await fetch(API_BASE + endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) { errEl.textContent = data.error || 'Something went wrong.'; return; }
+    currentUser = data;
+    localStorage.setItem('oem_user', JSON.stringify(currentUser));
+    await showMain();
+  } catch(e) { errEl.textContent = 'Cannot reach server. Check your connection.'; }
 }
-function signOut(){ localStorage.removeItem('oem_user'); currentUser=null; showAuthScreen(); }
 
-// ── App shell ──────────────────────────────────────────────────────
-async function showApp(){
-  document.getElementById('auth-root').style.display='none';
-  document.getElementById('app-root').style.display='';
+// ── Main ──────────────────────────────────────────────────────────────
+async function showMain() {
+  document.getElementById('auth-panel').style.display = 'none';
+  document.getElementById('main-panel').style.display = '';
   const initials = currentUser.username.slice(0,2).toUpperCase();
-  ['sidebar-avatar','drawer-avatar'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=initials; });
-  ['sidebar-username','drawer-username'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=currentUser.username; });
-  document.getElementById('new-comment-avatar').textContent=initials;
-  await fetch(API_BASE+'/api/ensure-slots',{method:'POST'}).catch(()=>{});
-  await loadAll();
-  buildSidebarNav();
-  showView('mine');
-}
-
-// ── Data ───────────────────────────────────────────────────────────
-async function loadAll(){
-  try{ const r=await fetch(API_BASE+'/api/submissions'); allSubmissions=await r.json(); }
-  catch(e){ allSubmissions=[]; }
-  const curMonth = currentMonthStr();
-  const months   = [...new Set(allSubmissions.map(s=>s.month))].sort().reverse();
-  // Default to current month if exists, else latest
-  if(!selectedMonth) selectedMonth = months.includes(curMonth)?curMonth:(months[0]||curMonth);
-  if(!selectedYear)  selectedYear  = selectedMonth.split('-')[0];
-}
-function currentMonthStr(){ return new Date().toISOString().slice(0,7); }
-function formatMonth(m){
-  const [y,mo]=m.split('-');
-  return new Date(+y,+mo-1).toLocaleString('en-US',{month:'long',year:'numeric'});
-}
-function formatMonthShort(m){
-  const [y,mo]=m.split('-');
-  return new Date(+y,+mo-1).toLocaleString('en-US',{month:'short'});
-}
-
-// ── Sidebar nav ────────────────────────────────────────────────────
-function buildSidebarNav(){
-  const curYear = String(new Date().getFullYear());
-  // Group submitted months by year
-  const months = [...new Set(allSubmissions.map(s=>s.month))].sort().reverse();
-  const byYear = {};
-  months.forEach(m=>{ const y=m.split('-')[0]; if(!byYear[y]) byYear[y]=[]; byYear[y].push(m); });
-  const years = Object.keys(byYear).sort().reverse();
-
-  const navHtml = `
-    <div class="nav-section-label">Submissions</div>
-    <button class="nav-item ${currentView==='mine'?'active':''}" onclick="showView('mine')">✍️ My Submissions</button>
-    <div class="nav-section-label" style="margin-top:12px">All Expressions</div>
-    ${years.map(year=>{
-      const isCurrentYear = year===curYear;
-      const collapsed = !isCurrentYear && year!==selectedYear;
-      return `<div class="nav-year-group">
-        <button class="nav-year-btn ${collapsed?'collapsed':''}" onclick="toggleNavYear(this,'nav-year-${year}')">
-          <span>${year}</span><span class="chevron">▾</span>
-        </button>
-        <div class="nav-year-items ${collapsed?'hidden':''}" id="nav-year-${year}">
-          ${byYear[year].map(m=>`
-            <button class="nav-item ${m===selectedMonth&&currentView==='all'?'active':''}"
-              onclick="selectMonthAndView('${m}')">
-              ${formatMonthShort(m)} ${m.split('-')[1]==='01'?m.split('-')[0]:''}
-            </button>`).join('')}
-        </div>
-      </div>`;
-    }).join('')}
+  document.getElementById('user-greeting').innerHTML = `
+    <div class="avatar">${initials}</div>
+    <span>Hi, <strong>${currentUser.username}</strong></span>
+    <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button>
   `;
-  document.getElementById('sidebar-nav').innerHTML = navHtml;
-  document.getElementById('drawer-nav').innerHTML  = navHtml;
+  await fetch(API_BASE + '/api/ensure-slots', { method:'POST' }).catch(()=>{});
+  await loadAll();
+  renderMySubmissions();
+}
+function signOut() { localStorage.removeItem('oem_user'); currentUser = null; showAuth(); }
+
+// ── Data ──────────────────────────────────────────────────────────────
+async function loadAll() {
+  try {
+    const r = await fetch(API_BASE + '/api/submissions');
+    allSubmissions = await r.json();
+  } catch(e) { allSubmissions = []; }
+  const months = [...new Set(allSubmissions.map(s => s.month))].sort().reverse();
+  selectedMonth = selectedMonth || months[0] || currentMonthStr();
+  renderMonthNav(months);
+  renderAllGrid();
+}
+function currentMonthStr() { return new Date().toISOString().slice(0,7); }
+function formatMonth(m) {
+  const [y, mo] = m.split('-');
+  return new Date(+y, +mo-1).toLocaleString('en-US', { month:'long', year:'numeric' });
 }
 
-function toggleNavYear(btn, contentId){
-  btn.classList.toggle('collapsed');
-  document.getElementById(contentId).classList.toggle('hidden');
-}
-
-function selectMonthAndView(month){
-  selectedMonth = month;
-  selectedYear  = month.split('-')[0];
-  showView('all');
-  closeDrawer();
-}
-
-// ── Views ──────────────────────────────────────────────────────────
-function showView(view){
-  currentView = view;
-  // Update bottom bar
-  document.querySelectorAll('.bottom-tab').forEach(b=>b.classList.remove('active'));
-  const btab = document.getElementById('btab-'+view);
-  if(btab) btab.classList.add('active');
-  // Render
-  if(view==='mine') renderMineView();
-  else              renderAllView();
-  buildSidebarNav();
-}
-
-// ── Mine view ──────────────────────────────────────────────────────
-function renderMineView(){
-  const mine = allSubmissions.filter(s=>s.userId===currentUser._id&&s.expression);
-  const curMonth = currentMonthStr();
-  const hasThisMonth = mine.some(s=>s.month===curMonth);
-
-  const byMonth={};
-  mine.forEach(s=>{ if(!byMonth[s.month]) byMonth[s.month]=[]; byMonth[s.month].push(s); });
-  const sortedMonths=Object.keys(byMonth).sort().reverse();
-
-  let html=`<div class="page-header">
-    <div class="page-title">✍️ My Submissions</div>
-    <div class="page-sub">${formatMonth(curMonth)}</div>
-    <div class="page-actions">
-      <button class="btn btn-accent2 btn-sm" onclick="openNewSubmission()">＋ New submission</button>
-    </div>
-  </div>`;
-
-  if(!sortedMonths.length){
-    html+=`<div class="empty-state"><div class="empty-icon">📝</div><h3>Nothing yet!</h3><p>Hit <strong>New submission</strong> to add your first expression.</p></div>`;
+// ── My Submissions ────────────────────────────────────────────────────
+function renderMySubmissions() {
+  const m = currentMonthStr();
+  document.getElementById('current-month-label').textContent = formatMonth(m);
+  const mine = allSubmissions.filter(s => s.userId === currentUser._id);
+  const thisMonth = mine.filter(s => s.month === m && s.expression);
+  const badge = document.getElementById('my-status-badge');
+  if (thisMonth.length > 0) {
+    badge.textContent = `✓ ${thisMonth.length} submitted`;
+    badge.className = 'badge badge-success';
   } else {
-    sortedMonths.forEach(month=>{
-      html+=`<div style="margin-bottom:24px">
-        <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
-          <span>${formatMonth(month)}</span>
-          <button class="btn btn-outline btn-xs" onclick="openNewSubmission('${month}')">＋ Add</button>
-        </div>
-        ${byMonth[month].map(s=>mySubCardHtml(s)).join('')}
-      </div>`;
-    });
+    badge.textContent = '⏳ Pending';
+    badge.className = 'badge badge-warn';
   }
 
-  // "Add a different month" section
-  html+=`<div style="margin-top:8px">
-    <button class="btn btn-outline btn-sm" onclick="openNewSubmission(null,true)">📆 Submit for a different month</button>
-  </div>`;
+  // Group by month, show current first
+  const byMonth = {};
+  mine.forEach(s => {
+    if (!byMonth[s.month]) byMonth[s.month] = [];
+    byMonth[s.month].push(s);
+  });
 
-  document.getElementById('main-content').innerHTML=html;
-}
+  const sortedMonths = Object.keys(byMonth).sort().reverse();
+  const list = document.getElementById('my-submissions-list');
 
-function mySubCardHtml(s){
-  const date=s.submittedAt?new Date(s.submittedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
-  return `<div class="my-sub-card">
-    <div class="expression-display">"${escHtml(s.expression)}"</div>
-    ${s.definition?`<div class="def-block"><div class="def-label">📖 Meaning</div><p>${escHtml(s.definition)}</p></div>`:''}
-    ${s.example?`<div class="def-block" style="margin-top:8px"><div class="def-label">✍️ Your example</div><p>${escHtml(s.example)}</p></div>`:''}
-    <div class="meta-row">
-      ${s.link?`<div class="meta-chip">🔗 <a href="${escHtml(s.link)}" target="_blank" rel="noopener">Source</a></div>`:''}
-      ${s.userComment?`<div class="meta-chip">💬 ${escHtml(s.userComment)}</div>`:''}
-      ${date?`<div class="meta-chip">🗓 ${date}</div>`:''}
-    </div>
-    <div style="margin-top:12px">
-      <button class="btn btn-outline btn-sm" onclick="editSub('${s._id}')">✏️ Edit</button>
-    </div>
-  </div>`;
-}
-
-// ── All view ───────────────────────────────────────────────────────
-function renderAllView(){
-  const months=[...new Set(allSubmissions.map(s=>s.month))].sort().reverse();
-  const curYear=String(new Date().getFullYear());
-  const years=[...new Set(months.map(m=>m.split('-')[0]))].sort().reverse();
-  if(!selectedYear) selectedYear=years.includes(curYear)?curYear:years[0];
-  const yearMonths=months.filter(m=>m.split('-')[0]===selectedYear);
-  if(!yearMonths.includes(selectedMonth)) selectedMonth=yearMonths[0]||months[0];
-
-  const forMonth=allSubmissions.filter(s=>s.month===selectedMonth);
-  const filled=forMonth.filter(s=>s.expression).length;
-
-  let html=`<div class="page-header">
-    <div class="page-title">🌍 All Expressions</div>
-    <div class="page-sub">${formatMonth(selectedMonth)}</div>
-  </div>`;
-
-  // Year tabs
-  html+=`<div class="year-tabs">${years.map(y=>`
-    <button class="year-tab-btn ${y===selectedYear?'active':''}" onclick="selectYear('${y}')">${y}</button>`).join('')}</div>`;
-
-  // Month tabs for selected year
-  html+=`<div class="month-tabs">${yearMonths.map(m=>`
-    <button class="month-tab-btn ${m===selectedMonth?'active':''}" onclick="selectMonth('${m}')">
-      ${formatMonthShort(m)}
-    </button>`).join('')}</div>`;
-
-  // Stats
-  html+=`<div class="stats-row">
-    <div class="stat-chip"><div><div class="stat-num">${filled}</div><div class="stat-label">Submitted</div></div></div>
-    <div class="stat-chip"><div><div class="stat-num">${forMonth.length-filled}</div><div class="stat-label">Pending</div></div></div>
-    <div class="stat-chip"><div><div class="stat-num">${forMonth.length}</div><div class="stat-label">Members</div></div></div>
-  </div>`;
-
-  // Grid
-  if(!forMonth.length){
-    html+=`<div class="empty-state"><div class="empty-icon">🗂</div><h3>No data yet</h3><p>No submissions for this month.</p></div>`;
-  } else {
-    html+=`<div class="sub-grid">${forMonth.map(s=>{
-      const isEmpty=!s.expression;
-      const date=s.submittedAt?new Date(s.submittedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
-      const cc=(comments[s._id]||[]).length;
-      return `<div class="sub-card ${isEmpty?'empty':''}" ${!isEmpty?`onclick="openCardModal('${s._id}')"`:''}>`+
-        `<div class="card-user"><span class="dot"></span>${escHtml(s.username)}</div>`+
-        `<div class="card-expr">${isEmpty?'Not submitted yet':`"${escHtml(s.expression)}"`}</div>`+
-        (!isEmpty&&s.definition?`<div class="card-def">${escHtml(s.definition)}</div>`:'')+
-        `<div class="card-footer">`+
-          `<div class="card-date">${date?`🗓 ${date}`:''}</div>`+
-          (!isEmpty?`<div class="card-comment-count">💬 ${cc}</div>`:'')+
-        `</div></div>`;
-    }).join('')}</div>`;
+  if (sortedMonths.length === 0) {
+    list.innerHTML = `<div class="my-sub-card" style="text-align:center;padding:40px 28px;color:var(--ink-soft)">
+      <div style="font-size:2rem;margin-bottom:10px">📝</div>
+      <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:8px">Nothing yet!</div>
+      <div style="font-size:.85rem">Hit <strong>New submission</strong> to add your first expression.</div>
+    </div>`;
+    return;
   }
 
-  document.getElementById('main-content').innerHTML=html;
+  list.innerHTML = sortedMonths.map(month => {
+    const subs = byMonth[month];
+    const filled = subs.filter(s => s.expression);
+    return `
+      <div style="margin-bottom:28px">
+        <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px">${formatMonth(month)}</div>
+        ${filled.length === 0 ? `<div class="my-sub-card" style="color:var(--ink-faint);font-style:italic;font-size:.9rem">No expression submitted for this month yet.</div>` :
+          filled.map(s => renderMySubCard(s)).join('')}
+      </div>
+    `;
+  }).join('');
 }
 
-function selectYear(y){
-  selectedYear=y;
-  const months=[...new Set(allSubmissions.map(s=>s.month))].filter(m=>m.split('-')[0]===y).sort().reverse();
-  selectedMonth=months[0]||selectedMonth;
-  renderAllView();
-  buildSidebarNav();
-}
-function selectMonth(m){
-  selectedMonth=m;
-  selectedYear=m.split('-')[0];
-  renderAllView();
-  buildSidebarNav();
+function renderMySubCard(s) {
+  const linkHtml = s.link ? `<div class="meta-chip">🔗 <a href="${s.link}" target="_blank" rel="noopener">Source link</a></div>` : '';
+  const commentHtml = s.userComment ? `<div class="meta-chip">💬 ${escHtml(s.userComment)}</div>` : '';
+  const date = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+  return `
+    <div class="my-sub-card">
+      <div class="expression-display">"${escHtml(s.expression)}"</div>
+      ${s.definition ? `<div class="def-block">
+        <div class="def-label">📖 Meaning</div>
+        <p>${escHtml(s.definition)}</p>
+      </div>` : ''}
+      <div class="meta-row">
+        ${linkHtml}${commentHtml}
+        ${date ? `<div class="meta-chip">🗓 ${date}</div>` : ''}
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="editSub('${s._id}')">✏️ Edit</button>
+        <button class="btn btn-sm" style="background:transparent;border:1.5px solid var(--danger);color:var(--danger)" onclick="deleteSub('${s._id}')">🗑 Delete</button>
+      </div>
+    </div>
+  `;
 }
 
-// ── New submission modal ───────────────────────────────────────────
-function openNewSubmission(month, pickMonth){
-  if(pickMonth){
-    // Show a simple month input
-    const input = prompt('Enter month (YYYY-MM), e.g. 2026-03:');
-    if(!input || !/^\d{4}-\d{2}$/.test(input)) return;
-    pendingMonth=input;
-  } else {
-    pendingMonth=month||currentMonthStr();
-  }
-  document.getElementById('new-sub-title').textContent='New Expression';
-  document.getElementById('new-sub-subtitle').textContent=formatMonth(pendingMonth);
-  document.getElementById('ns-expr').value='';
-  document.getElementById('ns-example').value='';
-  document.getElementById('ns-link').value='';
-  document.getElementById('ns-comment').value='';
-  document.getElementById('ns-error').textContent='';
-  document.getElementById('new-sub-modal').dataset.editId='';
+function editSub(id) {
+  const sub = allSubmissions.find(s => s._id === id);
+  if (!sub) return;
+  pendingMonth = sub.month;
+  document.getElementById('new-sub-title').textContent = 'Edit Expression';
+  document.getElementById('new-sub-subtitle').textContent = '';
+  document.getElementById('ns-month-display').textContent = formatMonth(sub.month);
+  document.getElementById('ns-expr').value    = sub.expression || '';
+  document.getElementById('ns-link').value    = sub.link       || '';
+  document.getElementById('ns-comment').value = sub.userComment|| '';
+  document.getElementById('ns-error').textContent = '';
+  document.getElementById('new-sub-modal').dataset.editId = id;
   openModal('new-sub-modal');
 }
 
-function editSub(id){
-  const sub=allSubmissions.find(s=>s._id===id);
-  if(!sub) return;
-  pendingMonth=sub.month;
-  document.getElementById('new-sub-title').textContent='Edit Expression';
-  document.getElementById('new-sub-subtitle').textContent=formatMonth(sub.month);
-  document.getElementById('ns-expr').value=sub.expression||'';
-  document.getElementById('ns-example').value=sub.example||'';
-  document.getElementById('ns-link').value=sub.link||'';
-  document.getElementById('ns-comment').value=sub.userComment||'';
-  document.getElementById('ns-error').textContent='';
-  document.getElementById('new-sub-modal').dataset.editId=id;
+async function deleteSub(id) {
+  if (!confirm('Delete this expression? This cannot be undone.')) return;
+  try {
+    const r = await fetch(API_BASE + '/api/submissions/' + id, { method: 'DELETE' });
+    if (!r.ok) { alert('Could not delete. Try again.'); return; }
+    await loadAll();
+    renderMySubmissions();
+    buildSidebarOrYearNav();
+  } catch(e) { alert('Could not delete. Check your connection.'); }
+}
+
+// ── New Submission modal ──────────────────────────────────────────────
+function openNewSubmission(month) {
+  pendingMonth = month || currentMonthStr();
+  document.getElementById('new-sub-title').textContent = 'New Expression';
+  document.getElementById('new-sub-subtitle').textContent = '';
+  document.getElementById('ns-month-display').textContent = formatMonth(pendingMonth);
+  document.getElementById('ns-expr').value = '';
+  document.getElementById('ns-link').value = '';
+  document.getElementById('ns-comment').value = '';
+  document.getElementById('ns-error').textContent = '';
+  document.getElementById('new-sub-modal').dataset.editId = '';
   openModal('new-sub-modal');
 }
 
-async function saveNewSubmission(){
+function openMonthPickerFromModal() {
+  closeModal('new-sub-modal');
+  pickerYear = new Date().getFullYear();
+  renderMonthPickerGrid();
+  openModal('month-modal');
+}
+
+async function saveNewSubmission() {
   const expression  = document.getElementById('ns-expr').value.trim();
-  const example     = document.getElementById('ns-example').value.trim();
   const link        = document.getElementById('ns-link').value.trim();
   const userComment = document.getElementById('ns-comment').value.trim();
   const errEl       = document.getElementById('ns-error');
-  errEl.textContent='';
-  if(!expression){errEl.textContent='Please enter an expression.';return;}
-  const editId=document.getElementById('new-sub-modal').dataset.editId;
-  try{
-    const r=await fetch(API_BASE+'/api/submissions',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({userId:currentUser._id,username:currentUser.username,
-        month:pendingMonth,expression,definition:'',example,link,userComment,
-        ...(editId?{editId}:{})})
+  errEl.textContent = '';
+  if (!expression) { errEl.textContent = 'Please enter an expression.'; return; }
+
+  const editId = document.getElementById('new-sub-modal').dataset.editId;
+  try {
+    const r = await fetch(API_BASE + '/api/submissions', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ userId: currentUser._id, username: currentUser.username,
+        month: pendingMonth, expression, definition: '', example: '', link, userComment,
+        ...(editId ? { editId } : {}) })
     });
-    if(!r.ok){const d=await r.json();errEl.textContent=d.error;return;}
-    const saved=await r.json();
+    if (!r.ok) { const d = await r.json(); errEl.textContent = d.error; return; }
+    const saved = await r.json();
     closeModal('new-sub-modal');
     await loadAll();
-    renderMineView();
-    // Silently fetch meaning in background
-    lookupAndPatchMeaning(saved._id, expression);
-  } catch(e){ errEl.textContent='Could not save. Check your connection.'; }
+    renderMySubmissions();
+    // Silently fetch meaning in background after save
+    if (!editId) silentLookup(saved._id, expression);
+  } catch(e) { errEl.textContent = 'Could not save. Check your connection.'; }
 }
 
-// Silent background meaning lookup
-async function lookupAndPatchMeaning(subId, expression){
-  try{
-    const words=expression.replace(/["""'']/g,'').split(/\s+/).filter(w=>w.length>3);
-    const keyword=words[0]||expression;
-    const r=await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(keyword)}`);
-    if(!r.ok) return;
-    const data=await r.json();
-    if(!Array.isArray(data)||!data[0]) return;
-    let definition='';
-    for(const m of (data[0].meanings||[])){
-      for(const def of (m.definitions||[])){ if(def.definition){definition=def.definition;break;} }
-      if(definition) break;
+async function silentLookup(subId, expression) {
+  try {
+    const words = expression.replace(/["""'']/g,'').split(/\s+/).filter(w=>w.length>3);
+    const keyword = words[0] || expression;
+    const r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(keyword)}`);
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!Array.isArray(data) || !data[0]) return;
+    let definition = '';
+    for (const m of (data[0].meanings||[])) {
+      for (const def of (m.definitions||[])) { if (def.definition) { definition = def.definition; break; } }
+      if (definition) break;
     }
-    if(!definition) return;
-    // Patch via backend
-    await fetch(API_BASE+'/api/submissions/patch-meaning',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({subId,definition})
+    if (!definition) return;
+    await fetch(API_BASE + '/api/submissions/patch-meaning', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ subId, definition })
     });
-    // Reload silently and re-render
     await loadAll();
-    if(currentView==='mine') renderMineView();
-    else renderAllView();
-    buildSidebarNav();
-  } catch(e){}
+    renderMySubmissions();
+    renderAllGrid();
+  } catch(e) {}
 }
 
-// ── Card modal ─────────────────────────────────────────────────────
-async function openCardModal(subId){
-  activeSubId=subId;
-  const sub=allSubmissions.find(s=>s._id===subId);
-  if(!sub) return;
-  document.getElementById('modal-expr').textContent=`"${sub.expression}"`;
-  document.getElementById('modal-user').textContent=sub.username+' · '+formatMonth(sub.month);
-  let details='';
-  if(sub.definition) details+=`<div class="def-block"><div class="def-label">📖 Meaning</div><p>${escHtml(sub.definition)}</p></div>`;
-  if(sub.example)    details+=`<div class="def-block" style="margin-top:8px"><div class="def-label">✍️ Example</div><p>${escHtml(sub.example)}</p></div>`;
-  if(sub.link||sub.userComment){
-    details+='<div class="meta-row">';
-    if(sub.link)        details+=`<div class="meta-chip">🔗 <a href="${escHtml(sub.link)}" target="_blank" rel="noopener">Source</a></div>`;
-    if(sub.userComment) details+=`<div class="meta-chip">💬 ${escHtml(sub.userComment)}</div>`;
-    details+='</div>';
+// ── Month picker ──────────────────────────────────────────────────────
+function openMonthPicker() {
+  pickerYear = new Date().getFullYear();
+  renderMonthPickerGrid();
+  openModal('month-modal');
+}
+function changePickerYear(delta) { pickerYear += delta; renderMonthPickerGrid(); }
+function renderMonthPickerGrid() {
+  document.getElementById('picker-year').textContent = pickerYear;
+  const myMonths = new Set(allSubmissions.filter(s => s.userId === currentUser._id && s.expression).map(s => s.month));
+  document.getElementById('month-picker-grid').innerHTML = MONTHS_SHORT.map((name, i) => {
+    const m = `${pickerYear}-${String(i+1).padStart(2,'0')}`;
+    const taken = myMonths.has(m);
+    return `<button class="month-pick-btn ${taken ? 'taken' : ''}" onclick="${taken ? '' : `pickMonth('${m}')`}" ${taken ? 'title="Already submitted"' : ''}>${name}</button>`;
+  }).join('');
+}
+function pickMonth(m) {
+  pendingMonth = m;
+  closeModal('month-modal');
+  // Reopen new-sub-modal with updated month
+  document.getElementById('new-sub-title').textContent = 'New Expression';
+  document.getElementById('ns-month-display').textContent = formatMonth(m);
+  document.getElementById('ns-expr').value = '';
+  document.getElementById('ns-link').value = '';
+  document.getElementById('ns-comment').value = '';
+  document.getElementById('ns-error').textContent = '';
+  document.getElementById('new-sub-modal').dataset.editId = '';
+  openModal('new-sub-modal');
+}
+
+// ── All grid ──────────────────────────────────────────────────────────
+function buildSidebarOrYearNav() { /* no-op in tab layout, kept for compatibility */ }
+
+function renderMonthNav(months) {
+  const curYear = String(new Date().getFullYear());
+  const years = [...new Set(months.map(m => m.split('-')[0]))].sort().reverse();
+  if (!selectedYear) selectedYear = years.includes(curYear) ? curYear : years[0];
+  // If selectedMonth doesn't belong to selectedYear, reset it
+  const yearMonths = months.filter(m => m.split('-')[0] === selectedYear);
+  if (yearMonths.length && !yearMonths.includes(selectedMonth)) selectedMonth = yearMonths[0];
+
+  const yearTabsHtml = years.map(y =>
+    `<button class="year-tab-btn ${y === selectedYear ? 'active' : ''}" onclick="selectYear('${y}')">${y}</button>`
+  ).join('');
+
+  const monthBtnsHtml = yearMonths.map(m => {
+    const [, mo] = m.split('-');
+    const label = new Date(2000, +mo-1).toLocaleString('en-US', { month: 'short' });
+    return `<button class="month-tab-btn ${m === selectedMonth ? 'active' : ''}" onclick="selectMonth('${m}')">${label}</button>`;
+  }).join('');
+
+  document.getElementById('month-nav').innerHTML = `
+    <div class="year-tabs" style="margin-bottom:10px">${yearTabsHtml}</div>
+    <div class="month-tabs">${monthBtnsHtml}</div>
+  `;
+}
+
+function selectYear(y) {
+  selectedYear = y;
+  const months = [...new Set(allSubmissions.map(s => s.month))].sort().reverse();
+  const yearMonths = months.filter(m => m.split('-')[0] === y);
+  selectedMonth = yearMonths[0] || selectedMonth;
+  renderMonthNav(months);
+  renderAllGrid();
+}
+
+function selectMonth(m) {
+  selectedMonth = m;
+  selectedYear = m.split('-')[0];
+  renderMonthNav([...new Set(allSubmissions.map(s => s.month))].sort().reverse());
+  renderAllGrid();
+}
+function renderAllGrid() {
+  const forMonth = allSubmissions.filter(s => s.month === selectedMonth);
+  const filled   = forMonth.filter(s => s.expression).length;
+  document.getElementById('all-count-badge').textContent = `${filled} / ${forMonth.length} submitted`;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-chip"><div><div class="stat-num">${filled}</div><div class="stat-label">Submitted</div></div></div>
+    <div class="stat-chip"><div><div class="stat-num">${forMonth.length - filled}</div><div class="stat-label">Pending</div></div></div>
+    <div class="stat-chip"><div><div class="stat-num">${forMonth.length}</div><div class="stat-label">Members</div></div></div>
+  `;
+  const grid = document.getElementById('all-submissions');
+  if (!forMonth.length) { grid.innerHTML = '<p style="color:var(--ink-soft);font-size:.9rem">No data for this month yet.</p>'; return; }
+  grid.innerHTML = forMonth.map(s => {
+    const isEmpty = !s.expression;
+    const date = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+    const commentCount = (comments[s._id] || []).length;
+    return `<div class="sub-card ${isEmpty?'empty':''}" ${!isEmpty ? `onclick="openCardModal('${s._id}')"` : ''}>
+      <div class="card-user"><span class="dot"></span>${escHtml(s.username)}</div>
+      <div class="card-expr">${isEmpty ? 'Not submitted yet' : `"${escHtml(s.expression)}"`}</div>
+      ${!isEmpty && s.definition ? `<div class="card-def">${escHtml(s.definition)}</div>` : ''}
+      <div class="card-footer">
+        <div class="card-date">${date ? `🗓 ${date}` : ''}</div>
+        ${!isEmpty ? `<div class="card-comment-count">💬 ${commentCount}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Card modal ────────────────────────────────────────────────────────
+async function openCardModal(subId) {
+  activeSubId = subId;
+  const sub = allSubmissions.find(s => s._id === subId);
+  if (!sub) return;
+
+  document.getElementById('modal-expr').textContent = `"${sub.expression}"`;
+  document.getElementById('modal-user').textContent = sub.username + ' · ' + formatMonth(sub.month);
+
+  let details = '';
+  if (sub.definition) details += `<div class="def-block"><div class="def-label">📖 Meaning</div><p>${escHtml(sub.definition)}</p></div>`;
+  if (sub.example)    details += `<div class="def-block" style="margin-top:10px"><div class="def-label">✍️ Example</div><p>${escHtml(sub.example)}</p></div>`;
+  if (sub.link || sub.userComment) {
+    details += '<div class="meta-row">';
+    if (sub.link) details += `<div class="meta-chip">🔗 <a href="${escHtml(sub.link)}" target="_blank" rel="noopener">Source link</a></div>`;
+    if (sub.userComment) details += `<div class="meta-chip">💬 ${escHtml(sub.userComment)}</div>`;
+    details += '</div>';
   }
-  document.getElementById('modal-details').innerHTML=details;
+  document.getElementById('modal-details').innerHTML = details;
+
+  const initials = currentUser ? currentUser.username.slice(0,2).toUpperCase() : '?';
+  document.getElementById('new-comment-avatar').textContent = initials;
+
   await loadComments(subId);
   openModal('card-modal');
 }
 
-async function loadComments(subId){
-  try{ const r=await fetch(API_BASE+'/api/comments/'+subId); comments[subId]=await r.json(); }
-  catch(e){ comments[subId]=[]; }
+async function loadComments(subId) {
+  try {
+    const r = await fetch(API_BASE + '/api/comments/' + subId);
+    const data = await r.json();
+    comments[subId] = data;
+  } catch(e) { comments[subId] = []; }
   renderComments(subId);
 }
 
-function renderComments(subId){
-  const list=comments[subId]||[];
-  const top=list.filter(c=>!c.parentId);
-  document.getElementById('comments-count').textContent=list.length?`(${list.length})`:'';
-  if(!top.length){ document.getElementById('comments-list').innerHTML=`<div class="no-comments">No comments yet — be the first!</div>`; return; }
-  document.getElementById('comments-list').innerHTML=top.map(c=>renderComment(c,list)).join('');
+function renderComments(subId) {
+  const list = comments[subId] || [];
+  const topLevel = list.filter(c => !c.parentId);
+  const countEl = document.getElementById('comments-count');
+  countEl.textContent = list.length ? `(${list.length})` : '';
+
+  if (!topLevel.length) {
+    document.getElementById('comments-list').innerHTML = `<div class="no-comments">No comments yet — be the first!</div>`;
+    return;
+  }
+
+  document.getElementById('comments-list').innerHTML = topLevel.map(c => renderComment(c, list)).join('');
 }
 
-function renderComment(c,all){
-  const replies=all.filter(r=>r.parentId===c._id);
-  const initials=c.username.slice(0,2).toUpperCase();
-  const date=new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+function renderComment(c, all) {
+  const replies = all.filter(r => r.parentId === c._id);
+  const initials = c.username.slice(0,2).toUpperCase();
+  const date = new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
   return `<div class="comment" id="comment-${c._id}">
     <div class="comment-avatar">${initials}</div>
     <div class="comment-body">
       <div class="comment-meta"><span class="comment-author">${escHtml(c.username)}</span><span>${date}</span></div>
       <div class="comment-text">${escHtml(c.text)}</div>
       <button class="reply-btn" onclick="toggleReplyBox('${c._id}')">↩ Reply</button>
-      <div id="reply-box-${c._id}" style="display:none;margin-top:6px">
-        <div class="new-comment-box" style="margin-top:0">
-          <div class="comment-avatar" style="width:22px;height:22px;font-size:.58rem">${currentUser?currentUser.username.slice(0,2).toUpperCase():'?'}</div>
+      <div id="reply-box-${c._id}" style="display:none;margin-top:8px">
+        <div class="new-comment-box">
+          <div class="comment-avatar" style="width:22px;height:22px;font-size:.6rem">${currentUser ? currentUser.username.slice(0,2).toUpperCase() : '?'}</div>
           <div style="flex:1">
-            <textarea id="reply-text-${c._id}" placeholder="Reply…" rows="2" style="font-size:.82rem"></textarea>
-            <div style="display:flex;gap:5px;margin-top:4px">
+            <textarea id="reply-text-${c._id}" placeholder="Reply…" rows="2" style="font-size:.85rem"></textarea>
+            <div style="display:flex;gap:6px;margin-top:4px">
               <button class="btn btn-primary btn-xs" onclick="postReply('${c._id}')">Reply</button>
               <button class="btn btn-outline btn-xs" onclick="toggleReplyBox('${c._id}')">Cancel</button>
             </div>
           </div>
         </div>
       </div>
-      ${replies.length?`<div class="replies">${replies.map(r=>renderComment(r,all)).join('')}</div>`:''}
+      ${replies.length ? `<div class="replies">${replies.map(r => renderComment(r, all)).join('')}</div>` : ''}
     </div>
   </div>`;
 }
 
-function toggleReplyBox(id){ const b=document.getElementById('reply-box-'+id); b.style.display=b.style.display==='none'?'':'none'; }
-
-async function postComment(){
-  if(!currentUser||!activeSubId) return;
-  const text=document.getElementById('new-comment-text').value.trim();
-  if(!text) return;
-  await sendComment({subId:activeSubId,text,username:currentUser.username});
-  document.getElementById('new-comment-text').value='';
+function toggleReplyBox(commentId) {
+  const box = document.getElementById('reply-box-' + commentId);
+  box.style.display = box.style.display === 'none' ? '' : 'none';
 }
-async function postReply(parentId){
-  if(!currentUser||!activeSubId) return;
-  const text=document.getElementById('reply-text-'+parentId).value.trim();
-  if(!text) return;
-  await sendComment({subId:activeSubId,text,username:currentUser.username,parentId});
-  document.getElementById('reply-text-'+parentId).value='';
+
+async function postComment() {
+  if (!currentUser || !activeSubId) return;
+  const text = document.getElementById('new-comment-text').value.trim();
+  if (!text) return;
+  await sendComment({ subId: activeSubId, text, username: currentUser.username });
+  document.getElementById('new-comment-text').value = '';
+}
+
+async function postReply(parentId) {
+  if (!currentUser || !activeSubId) return;
+  const text = document.getElementById('reply-text-' + parentId).value.trim();
+  if (!text) return;
+  await sendComment({ subId: activeSubId, text, username: currentUser.username, parentId });
+  document.getElementById('reply-text-' + parentId).value = '';
   toggleReplyBox(parentId);
 }
-async function sendComment({subId,text,username,parentId}){
-  try{
-    await fetch(API_BASE+'/api/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subId,text,username,parentId:parentId||null})});
+
+async function sendComment({ subId, text, username, parentId }) {
+  try {
+    await fetch(API_BASE + '/api/comments', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ subId, text, username, parentId: parentId || null })
+    });
     await loadComments(subId);
-    if(currentView==='all') renderAllView();
-  } catch(e){}
+    renderAllGrid();
+  } catch(e) {}
 }
 
-// ── Drawer ─────────────────────────────────────────────────────────
-function openDrawer(){
-  document.getElementById('mobile-drawer').classList.add('open');
-  document.getElementById('drawer-overlay').style.display='block';
-  setTimeout(()=>document.getElementById('drawer-overlay').classList.add('open'),10);
-}
-function closeDrawer(){
-  document.getElementById('mobile-drawer').classList.remove('open');
-  document.getElementById('drawer-overlay').classList.remove('open');
-  setTimeout(()=>document.getElementById('drawer-overlay').style.display='none',220);
+// ── Dictionary ────────────────────────────────────────────────────────
+async function lookupExpression(expr) {
+  const words = expr.replace(/["""'']/g,'').split(/\s+/).filter(w=>w.length>3);
+  const keyword = words[0] || expr;
+  try {
+    const r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(keyword)}`);
+    if (!r.ok) return { definition:'' };
+    const data = await r.json();
+    if (!Array.isArray(data) || !data[0]) return { definition:'' };
+    let definition = '';
+    for (const m of (data[0].meanings||[])) {
+      for (const def of (m.definitions||[])) { if (def.definition) { definition = def.definition; break; } }
+      if (definition) break;
+    }
+    return { definition };
+  } catch(e) { return { definition:'' }; }
 }
 
-// ── Modals ─────────────────────────────────────────────────────────
-function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
-function closeModalOnBg(e,id){ if(e.target===document.getElementById(id)) closeModal(id); }
+// ── Modals ────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+function closeModalOnBg(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
 
-// ── Utils ──────────────────────────────────────────────────────────
-function escHtml(s){
-  if(!s) return '';
+// ── Tabs ──────────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────
+function escHtml(s) {
+  if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>

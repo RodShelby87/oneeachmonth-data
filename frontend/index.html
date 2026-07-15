@@ -109,7 +109,18 @@
   .tab-pane.active { display: block; }
 
   /* Badges & pills */
-  .month-pill { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, var(--accent-bg), var(--accent2-bg)); border: 1px solid var(--rule); color: var(--accent); font-size: 0.75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 5px 14px; border-radius: 20px; margin-bottom: 8px; }
+  .month-pill-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, var(--accent-bg), var(--accent2-bg));
+    border: 1px solid var(--rule); color: var(--accent);
+    font-size: 0.75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 8px;
+    cursor: pointer; transition: all .15s; font-family: 'Inter', sans-serif;
+  }
+  .month-pill-btn:hover {
+    background: linear-gradient(135deg, var(--accent-bg), var(--accent-bg));
+    border-color: var(--accent); box-shadow: 0 2px 8px rgba(124,58,237,.2);
+  }
   .badge { font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; }
   .badge-success { background: var(--success-bg); color: var(--success); }
   .badge-warn    { background: var(--gold-bg);    color: var(--gold); }
@@ -123,7 +134,8 @@
   /* Submission card (my submissions) */
   .my-sub-card { background: var(--card); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow-md); margin-bottom: 18px; border: 1px solid var(--rule); position: relative; overflow: hidden; }
   .my-sub-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
-  .expression-display { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 700; font-style: italic; color: var(--ink); line-height: 1.3; margin-bottom: 14px; }
+  .expression-display { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 700; font-style: italic; color: var(--ink); line-height: 1.3; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+  .expression-display-text { flex: 1; }
   .def-block { background: var(--card2); border-radius: var(--radius-sm); padding: 14px 18px; margin-top: 14px; border: 1px solid var(--rule); }
   .def-label { font-size: 0.7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
   .def-block p { font-size: 0.88rem; color: var(--ink-soft); line-height: 1.65; }
@@ -177,7 +189,8 @@
   .modal-body { padding: 20px 28px 28px; }
 
   /* Modal expression */
-  .modal-expr { font-family: 'Fraunces', serif; font-size: 1.6rem; font-style: italic; font-weight: 700; color: var(--ink); line-height: 1.3; margin-bottom: 4px; }
+  .modal-expr-row { display: flex; align-items: flex-start; gap: 10px; }
+  .modal-expr { font-family: 'Fraunces', serif; font-size: 1.6rem; font-style: italic; font-weight: 700; color: var(--ink); line-height: 1.3; margin-bottom: 4px; flex: 1; }
   .modal-user { font-size: 0.78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent2); margin-bottom: 16px; }
 
   /* Comments */
@@ -201,6 +214,7 @@
   .month-pick-btn { padding: 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--rule); background: var(--card2); color: var(--ink-soft); font-size: 0.82rem; font-weight: 600; cursor: pointer; text-align: center; transition: all .15s; }
   .month-pick-btn:hover { border-color: var(--accent); color: var(--accent); }
   .month-pick-btn.taken { opacity: .4; cursor: not-allowed; border-style: dashed; }
+  .month-pick-btn.current-selection { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
   .year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
   .year-nav button { background: var(--card2); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 6px 14px; cursor: pointer; color: var(--ink-soft); font-size: 0.85rem; font-weight: 600; transition: background .15s; }
   .year-nav button:hover { background: var(--rule); }
@@ -252,11 +266,18 @@
     background: none; border: none; cursor: pointer;
     font-size: 0.9rem; padding: 2px 4px; border-radius: 4px;
     opacity: 0.55; transition: opacity .15s, transform .15s;
-    line-height: 1;
+    line-height: 1; flex-shrink: 0;
   }
   .tts-btn:hover { opacity: 1; }
   .tts-btn.speaking { opacity: 1; animation: pulse-tts .7s ease-in-out infinite alternate; }
   @keyframes pulse-tts { from { transform: scale(1); } to { transform: scale(1.25); } }
+
+  /* ── My submissions month nav ──────────────────────────── */
+  #my-month-empty {
+    text-align: center; padding: 48px 28px;
+    color: var(--ink-soft); font-size: .9rem;
+  }
+  #my-month-empty .empty-icon { font-size: 2.2rem; margin-bottom: 10px; }
 
   @media (max-width: 520px) {
     header { flex-direction: column; align-items: flex-start; }
@@ -327,7 +348,10 @@
     <div class="tab-pane active" id="tab-submit">
       <div class="section-header">
         <div>
-          <div class="month-pill">📅 <span id="current-month-label"></span></div>
+          <!-- Clickable month pill button -->
+          <button class="month-pill-btn" id="my-month-pill-btn" onclick="openMyMonthPicker()">
+            📅 <span id="current-month-label"></span> ▾
+          </button>
           <div class="section-title">My Submissions <span class="badge" id="my-status-badge"></span></div>
         </div>
         <div class="section-actions">
@@ -354,7 +378,10 @@
   <div class="modal">
     <div class="modal-header">
       <div style="flex:1">
-        <div class="modal-expr" id="modal-expr"></div>
+        <div class="modal-expr-row">
+          <div class="modal-expr" id="modal-expr"></div>
+          <button class="tts-btn" id="modal-tts-btn" title="Listen" onclick="speakExpressionById(activeSubId, this)">🔊</button>
+        </div>
         <div class="modal-user" id="modal-user"></div>
       </div>
       <button class="modal-close" onclick="closeModal('card-modal')">✕</button>
@@ -416,11 +443,11 @@
   </div>
 </div>
 
-<!-- Month picker modal -->
+<!-- Month picker modal (shared: for new submission AND my-month filter) -->
 <div class="modal-overlay" id="month-modal" onclick="closeModalOnBg(event,'month-modal')">
   <div class="modal">
     <div class="modal-header">
-      <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700">Pick a month</div>
+      <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700" id="month-modal-title">Pick a month</div>
       <button class="modal-close" onclick="closeModal('month-modal')">✕</button>
     </div>
     <div class="modal-body">
@@ -451,6 +478,67 @@ let isRegister     = true;
 let activeSubId    = null;  // for comment modal
 let pickerYear     = new Date().getFullYear();
 let pendingMonth   = null;  // month selected in picker for new submission
+let myViewMonth    = currentMonthStr(); // which month My Submissions tab is showing
+let monthPickerMode = 'new-sub'; // 'new-sub' | 'my-filter'
+
+// ── Speech Synthesis Setup ─────────────────────────────────────────────
+// Voices load async. We keep a resolved list and a promise so everything
+// waits for the first populate rather than silently failing.
+let _voicesReady = false;
+let _voicesResolve = null;
+const voicesReadyPromise = new Promise(r => { _voicesResolve = r; });
+
+function _populateVoices() {
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0 && !_voicesReady) {
+    _voicesReady = true;
+    _voicesResolve(voices);
+  }
+}
+window.speechSynthesis.onvoiceschanged = _populateVoices;
+_populateVoices(); // in case they're already loaded (Chrome sometimes has them instantly)
+
+async function getPreferredVoice() {
+  const voices = await voicesReadyPromise;
+
+  // Priority list — female-sounding names or known female en-US voices
+  const femalePriority = [
+    'Samantha',  // macOS / iOS — very natural female
+    'Karen',     // macOS Australian female
+    'Moira',     // macOS Irish female
+    'Tessa',     // macOS South African female
+    'Fiona',     // macOS Scottish female
+    'Victoria',  // macOS female
+    'Zira',      // Windows female en-US
+    'Hazel',     // Windows female en-GB
+    'Susan',
+    'Google US English Female',
+    'Microsoft Zira',
+    'en-US-Standard-C',
+    'en-US-Standard-E',
+    'en-US-Standard-F',
+    'en-US-Wavenet-C',
+    'en-US-Wavenet-E',
+    'en-US-Wavenet-F',
+  ];
+
+  for (const name of femalePriority) {
+    const v = voices.find(v => v.name.includes(name) && v.lang.startsWith('en'));
+    if (v) return v;
+  }
+
+  // Fallback: any local English voice that sounds female by typical naming
+  const femaleKeywords = ['female', 'woman', 'girl', 'zira', 'samantha', 'karen', 'fiona', 'victoria', 'hazel'];
+  const femaleGuess = voices.find(v =>
+    v.lang.startsWith('en') && femaleKeywords.some(k => v.name.toLowerCase().includes(k))
+  );
+  if (femaleGuess) return femaleGuess;
+
+  // Last resort: any English voice
+  return voices.find(v => v.lang.startsWith('en') && v.localService) ||
+         voices.find(v => v.lang.startsWith('en')) ||
+         voices[0];
+}
 
 // ── Theme ─────────────────────────────────────────────────────────────
 function initTheme() {
@@ -551,58 +639,50 @@ function formatMonth(m) {
 
 // ── My Submissions ────────────────────────────────────────────────────
 function renderMySubmissions() {
-  const m = currentMonthStr();
-  document.getElementById('current-month-label').textContent = formatMonth(m);
+  // Update the month pill button label
+  document.getElementById('current-month-label').textContent = formatMonth(myViewMonth);
+
   const mine = allSubmissions.filter(s => s.userId === currentUser._id);
-  const thisMonth = mine.filter(s => s.month === m && s.expression);
+
+  // Update badge based on current view month
+  const thisMonthSubs = mine.filter(s => s.month === myViewMonth && s.expression);
   const badge = document.getElementById('my-status-badge');
-  if (thisMonth.length > 0) {
-    badge.textContent = `✓ ${thisMonth.length} submitted`;
+  if (thisMonthSubs.length > 0) {
+    badge.textContent = `✓ ${thisMonthSubs.length} submitted`;
     badge.className = 'badge badge-success';
   } else {
     badge.textContent = '⏳ Pending';
     badge.className = 'badge badge-warn';
   }
 
-  // Group by month, show current first
-  const byMonth = {};
-  mine.forEach(s => {
-    if (!byMonth[s.month]) byMonth[s.month] = [];
-    byMonth[s.month].push(s);
-  });
+  // Show only submissions for the selected view month
+  const forMonth = mine.filter(s => s.month === myViewMonth);
+  const filled   = forMonth.filter(s => s.expression);
+  const list     = document.getElementById('my-submissions-list');
 
-  const sortedMonths = Object.keys(byMonth).sort().reverse();
-  const list = document.getElementById('my-submissions-list');
-
-  if (sortedMonths.length === 0) {
-    list.innerHTML = `<div class="my-sub-card" style="text-align:center;padding:40px 28px;color:var(--ink-soft)">
-      <div style="font-size:2rem;margin-bottom:10px">📝</div>
-      <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:8px">Nothing yet!</div>
-      <div style="font-size:.85rem">Hit <strong>New submission</strong> to add your first expression.</div>
-    </div>`;
+  if (filled.length === 0) {
+    list.innerHTML = `
+      <div class="my-sub-card" style="text-align:center;padding:40px 28px;color:var(--ink-soft)">
+        <div style="font-size:2rem;margin-bottom:10px">📝</div>
+        <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:8px">Nothing for ${formatMonth(myViewMonth)}!</div>
+        <div style="font-size:.85rem">Hit <strong>New submission</strong> to add an expression for this month.</div>
+      </div>`;
     return;
   }
 
-  list.innerHTML = sortedMonths.map(month => {
-    const subs = byMonth[month];
-    const filled = subs.filter(s => s.expression);
-    return `
-      <div style="margin-bottom:28px">
-        <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px">${formatMonth(month)}</div>
-        ${filled.length === 0 ? `<div class="my-sub-card" style="color:var(--ink-faint);font-style:italic;font-size:.9rem">No expression submitted for this month yet.</div>` :
-          filled.map(s => renderMySubCard(s)).join('')}
-      </div>
-    `;
-  }).join('');
+  list.innerHTML = filled.map(s => renderMySubCard(s)).join('');
 }
 
 function renderMySubCard(s) {
-  const linkHtml = s.link ? `<div class="meta-chip">🔗 <a href="${s.link}" target="_blank" rel="noopener">Example link</a></div>` : '';
+  const linkHtml    = s.link        ? `<div class="meta-chip">🔗 <a href="${s.link}" target="_blank" rel="noopener">Example link</a></div>` : '';
   const commentHtml = s.userComment ? `<div class="meta-chip">💬 ${escHtml(s.userComment)}</div>` : '';
-  const date = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+  const date        = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
   return `
     <div class="my-sub-card">
-      <div class="expression-display">"${escHtml(s.expression)}"</div>
+      <div class="expression-display">
+        <div class="expression-display-text">"${escHtml(s.expression)}"</div>
+        <button class="tts-btn" title="Listen" onclick="speakExpressionById('${s._id}', this)">🔊</button>
+      </div>
       ${s.definition ? `<div class="def-block">
         <div class="def-label">📖 Meaning</div>
         <p>${escHtml(s.definition)}</p>
@@ -645,6 +725,42 @@ async function deleteSub(id) {
   } catch(e) { alert('Could not delete. Check your connection.'); }
 }
 
+// ── My Submissions — month picker ─────────────────────────────────────
+function openMyMonthPicker() {
+  monthPickerMode = 'my-filter';
+  pickerYear = parseInt(myViewMonth.split('-')[0]);
+  document.getElementById('month-modal-title').textContent = 'View month';
+  renderMyMonthPickerGrid();
+  openModal('month-modal');
+}
+
+function renderMyMonthPickerGrid() {
+  document.getElementById('picker-year').textContent = pickerYear;
+  // All months that have at least one filled submission for this user
+  const myFilledMonths = new Set(
+    allSubmissions
+      .filter(s => s.userId === currentUser._id && s.expression)
+      .map(s => s.month)
+  );
+  document.getElementById('month-picker-grid').innerHTML = MONTHS_SHORT.map((name, i) => {
+    const m = `${pickerYear}-${String(i+1).padStart(2,'0')}`;
+    const isCurrent = m === myViewMonth;
+    const hasData   = myFilledMonths.has(m);
+    return `<button
+      class="month-pick-btn ${isCurrent ? 'current-selection' : ''} ${!hasData ? 'no-data' : ''}"
+      onclick="pickMyMonth('${m}')"
+      title="${hasData ? '' : 'No submission yet'}"
+      style="${!hasData && !isCurrent ? 'opacity:.45' : ''}"
+    >${name}</button>`;
+  }).join('');
+}
+
+function pickMyMonth(m) {
+  myViewMonth = m;
+  closeModal('month-modal');
+  renderMySubmissions();
+}
+
 // ── New Submission modal ──────────────────────────────────────────────
 function openNewSubmission(month) {
   pendingMonth = month || currentMonthStr();
@@ -660,8 +776,10 @@ function openNewSubmission(month) {
 }
 
 function openMonthPickerFromModal() {
+  monthPickerMode = 'new-sub';
   closeModal('new-sub-modal');
   pickerYear = new Date().getFullYear();
+  document.getElementById('month-modal-title').textContent = 'Pick a month';
   renderMonthPickerGrid();
   openModal('month-modal');
 }
@@ -675,12 +793,9 @@ async function saveNewSubmission() {
   errEl.textContent = '';
   if (!expression) { errEl.textContent = 'Please enter an expression.'; return; }
 
-  // Disable button and close modal immediately
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<span class="spinner"></span> Saving…';
   closeModal('new-sub-modal');
-
-  // Show a global saving toast
   showToast('Saving expression…', 'loading');
 
   const editId = document.getElementById('new-sub-modal').dataset.editId;
@@ -694,7 +809,6 @@ async function saveNewSubmission() {
     if (!r.ok) {
       const d = await r.json();
       showToast(d.error || 'Could not save.', 'error');
-      // Re-enable button and reopen modal on error
       saveBtn.disabled = false;
       saveBtn.innerHTML = '✨ Save expression';
       openModal('new-sub-modal');
@@ -703,11 +817,12 @@ async function saveNewSubmission() {
     }
     const saved = await r.json();
     showToast('Saved! Looking up meaning…', 'loading');
+    // Update view month so user sees what they just submitted
+    myViewMonth = pendingMonth;
     await loadAll();
     renderMySubmissions();
     saveBtn.disabled = false;
     saveBtn.innerHTML = '✨ Save expression';
-    // Always look up meaning — works for both new and edits
     silentLookup(saved._id, expression);
   } catch(e) {
     showToast('Could not save. Check your connection.', 'error');
@@ -744,26 +859,39 @@ async function silentLookup(subId, expression) {
   }
 }
 
-// ── Month picker ──────────────────────────────────────────────────────
+// ── Month picker (new-sub flow) ────────────────────────────────────────
 function openMonthPicker() {
+  monthPickerMode = 'new-sub';
   pickerYear = new Date().getFullYear();
+  document.getElementById('month-modal-title').textContent = 'Pick a month';
   renderMonthPickerGrid();
   openModal('month-modal');
 }
-function changePickerYear(delta) { pickerYear += delta; renderMonthPickerGrid(); }
+
+function changePickerYear(delta) {
+  pickerYear += delta;
+  if (monthPickerMode === 'my-filter') {
+    renderMyMonthPickerGrid();
+  } else {
+    renderMonthPickerGrid();
+  }
+}
+
 function renderMonthPickerGrid() {
   document.getElementById('picker-year').textContent = pickerYear;
-  const myMonths = new Set(allSubmissions.filter(s => s.userId === currentUser._id && s.expression).map(s => s.month));
+  const myMonths = new Set(
+    allSubmissions.filter(s => s.userId === currentUser._id && s.expression).map(s => s.month)
+  );
   document.getElementById('month-picker-grid').innerHTML = MONTHS_SHORT.map((name, i) => {
     const m = `${pickerYear}-${String(i+1).padStart(2,'0')}`;
     const taken = myMonths.has(m);
     return `<button class="month-pick-btn ${taken ? 'taken' : ''}" onclick="${taken ? '' : `pickMonth('${m}')`}" ${taken ? 'title="Already submitted"' : ''}>${name}</button>`;
   }).join('');
 }
+
 function pickMonth(m) {
   pendingMonth = m;
   closeModal('month-modal');
-  // Reopen new-sub-modal with updated month
   document.getElementById('new-sub-title').textContent = 'New Expression';
   document.getElementById('ns-month-display').textContent = formatMonth(m);
   document.getElementById('ns-expr').value = '';
@@ -781,7 +909,6 @@ function renderMonthNav(months) {
   const curYear = String(new Date().getFullYear());
   const years = [...new Set(months.map(m => m.split('-')[0]))].sort().reverse();
   if (!selectedYear) selectedYear = years.includes(curYear) ? curYear : years[0];
-  // If selectedMonth doesn't belong to selectedYear, reset it
   const yearMonths = months.filter(m => m.split('-')[0] === selectedYear);
   if (yearMonths.length && !yearMonths.includes(selectedMonth)) selectedMonth = yearMonths[0];
 
@@ -816,6 +943,7 @@ function selectMonth(m) {
   renderMonthNav([...new Set(allSubmissions.map(s => s.month))].sort().reverse());
   renderAllGrid();
 }
+
 function renderAllGrid() {
   const forMonth = allSubmissions.filter(s => s.month === selectedMonth);
   const filled   = forMonth.filter(s => s.expression).length;
@@ -839,7 +967,7 @@ function renderAllGrid() {
         <div class="card-date">${date ? `🗓 ${date}` : ''}</div>
         <div style="display:flex;align-items:center;gap:6px">
           ${!isEmpty ? `<div class="card-comment-count">💬 ${commentCount}</div>` : ''}
-          ${!isEmpty ? `<button class="tts-btn" title="Listen" onclick="event.stopPropagation();speakExpression('${s._id}',this)">🔊</button>` : ''}
+          ${!isEmpty ? `<button class="tts-btn" title="Listen" onclick="event.stopPropagation();speakExpressionById('${s._id}',this)">🔊</button>` : ''}
         </div>
       </div>
     </div>`;
@@ -854,6 +982,11 @@ async function openCardModal(subId) {
 
   document.getElementById('modal-expr').textContent = `"${sub.expression}"`;
   document.getElementById('modal-user').textContent = sub.username + ' · ' + formatMonth(sub.month);
+
+  // Reset modal TTS button state
+  const modalTtsBtn = document.getElementById('modal-tts-btn');
+  modalTtsBtn.textContent = '🔊';
+  modalTtsBtn.classList.remove('speaking');
 
   let details = '';
   if (sub.definition) details += `<div class="def-block"><div class="def-label">📖 Meaning</div><p>${escHtml(sub.definition)}</p></div>`;
@@ -976,7 +1109,16 @@ async function lookupExpression(expr) {
 
 // ── Modals ────────────────────────────────────────────────────────────
 function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow='';
+  // Stop TTS if closing the card modal
+  if (id === 'card-modal') {
+    window.speechSynthesis.cancel();
+    const btn = document.getElementById('modal-tts-btn');
+    if (btn) { btn.textContent = '🔊'; btn.classList.remove('speaking'); }
+  }
+}
 function closeModalOnBg(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
 
 // ── Tabs ──────────────────────────────────────────────────────────────
@@ -988,50 +1130,81 @@ function switchTab(name, btn) {
 }
 
 // ── Text-to-speech ────────────────────────────────────────────────────
-let currentUtterance = null;
+let activeTtsBtn = null;
 
-function speakExpression(subId, btn) {
+async function speakExpressionById(subId, btn) {
   const sub = allSubmissions.find(s => s._id === subId);
   if (!sub || !sub.expression) return;
 
-  // If already speaking this one, stop it
-  if (currentUtterance && btn.classList.contains('speaking')) {
+  // Toggle off if same button is speaking
+  if (activeTtsBtn === btn && window.speechSynthesis.speaking) {
     window.speechSynthesis.cancel();
-    btn.classList.remove('speaking');
-    btn.textContent = '🔊';
-    currentUtterance = null;
+    // onend/onerror will clean up activeTtsBtn + btn state
     return;
   }
 
-  // Stop any current speech
+  // Stop anything currently playing and reset its button
   window.speechSynthesis.cancel();
-  document.querySelectorAll('.tts-btn.speaking').forEach(b => {
-    b.classList.remove('speaking');
-    b.textContent = '🔊';
-  });
+  if (activeTtsBtn && activeTtsBtn !== btn) {
+    activeTtsBtn.textContent = '🔊';
+    activeTtsBtn.classList.remove('speaking');
+  }
+
+  // Tiny delay so cancel() fully stops before we start a new one
+  await new Promise(r => setTimeout(r, 80));
 
   const utterance = new SpeechSynthesisUtterance(sub.expression);
   utterance.lang = 'en-US';
-  utterance.rate = 0.9;
+  utterance.rate = 0.88;
+  utterance.pitch = 1.05;
 
-  // Pick an English voice if available
-  const voices = window.speechSynthesis.getVoices();
-  const engVoice = voices.find(v => v.lang.startsWith('en') && v.localService) ||
-                   voices.find(v => v.lang.startsWith('en'));
-  if (engVoice) utterance.voice = engVoice;
+  // Get preferred female voice (async, waits for voices to load)
+  const preferredVoice = await getPreferredVoice();
+  if (preferredVoice) utterance.voice = preferredVoice;
 
   utterance.onstart = () => {
+    activeTtsBtn = btn;
     btn.classList.add('speaking');
     btn.textContent = '🔉';
   };
-  utterance.onend = utterance.onerror = () => {
-    btn.classList.remove('speaking');
+
+  utterance.onend = () => {
     btn.textContent = '🔊';
-    currentUtterance = null;
+    btn.classList.remove('speaking');
+    if (activeTtsBtn === btn) activeTtsBtn = null;
   };
 
-  currentUtterance = utterance;
+  utterance.onerror = (e) => {
+    // 'interrupted' is expected when we cancel() — don't show it as an error
+    if (e.error !== 'interrupted') {
+      console.warn('TTS error:', e.error);
+    }
+    btn.textContent = '🔊';
+    btn.classList.remove('speaking');
+    if (activeTtsBtn === btn) activeTtsBtn = null;
+  };
+
   window.speechSynthesis.speak(utterance);
+
+  // Chrome bug: long utterances sometimes stall. Pump the engine every 10s.
+  const pump = setInterval(() => {
+    if (!window.speechSynthesis.speaking) { clearInterval(pump); return; }
+    window.speechSynthesis.pause();
+    window.speechSynthesis.resume();
+  }, 10000);
+  utterance.onend = () => {
+    clearInterval(pump);
+    btn.textContent = '🔊';
+    btn.classList.remove('speaking');
+    if (activeTtsBtn === btn) activeTtsBtn = null;
+  };
+  utterance.onerror = (e) => {
+    clearInterval(pump);
+    if (e.error !== 'interrupted') console.warn('TTS error:', e.error);
+    btn.textContent = '🔊';
+    btn.classList.remove('speaking');
+    if (activeTtsBtn === btn) activeTtsBtn = null;
+  };
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────

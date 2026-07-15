@@ -179,6 +179,16 @@ app.post('/api/submissions/patch-meaning', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Delete submission ─────────────────────────────────────────────────
+app.delete('/api/submissions/:id', async (req, res) => {
+  try {
+    await Submission.findByIdAndDelete(req.params.id);
+    // Also delete associated comments
+    await Comment.deleteMany({ subId: req.params.id });
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 app.listen(process.env.PORT || 3001, () =>
   console.log('OneEachMonth backend running on port', process.env.PORT || 3001)
 );

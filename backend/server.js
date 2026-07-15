@@ -169,6 +169,16 @@ app.post('/api/comments', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Patch meaning (background auto-lookup) ───────────────────────────
+app.post('/api/submissions/patch-meaning', async (req, res) => {
+  try {
+    const { subId, definition } = req.body;
+    if (!subId || !definition) return res.status(400).json({ error: 'Missing fields' });
+    await Submission.findByIdAndUpdate(subId, { definition });
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 app.listen(process.env.PORT || 3001, () =>
   console.log('OneEachMonth backend running on port', process.env.PORT || 3001)
 );

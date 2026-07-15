@@ -5,11 +5,24 @@
     "username": "Rodri",
     "month": "2026-07",
     "expression": "Hold your horses",
-    "definition": "",
+    "definition": "to slow down or stop for a moment —usually used in the imperative",
     "example": "",
     "link": "https://www.youtube.com/watch?v=EOXcbJimkE4",
     "userComment": "",
     "__v": 0,
     "submittedAt": "2026-07-15T19:02:50.169Z"
+  },
+  {
+    "_id": "6a57e722bb529455d4ce7b34",
+    "month": "2026-06",
+    "expression": "test",
+    "userId": "6a5795428ed29f665d55433e",
+    "__v": 0,
+    "definition": "",
+    "example": "",
+    "link": "",
+    "submittedAt": "2026-07-15T20:01:38.007Z",
+    "userComment": "",
+    "username": "Rodri"
   }
 ]

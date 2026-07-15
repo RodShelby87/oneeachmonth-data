@@ -1,15 +1,15 @@
 [
   {
-    "_id": "6a57d3fdbb529455d4ce7264",
-    "expression": "Hold your horses",
+    "_id": "6a57d78bf11da891a28c4500",
     "userId": "6a5795428ed29f665d55433e",
+    "username": "Rodri",
     "month": "2026-07",
-    "__v": 0,
+    "expression": "Hold your horses",
     "definition": "",
     "example": "",
     "link": "https://www.youtube.com/watch?v=EOXcbJimkE4",
-    "submittedAt": "2026-07-15T18:41:24.709Z",
     "userComment": "",
-    "username": "Rodri"
+    "__v": 0,
+    "submittedAt": "2026-07-15T18:55:32.742Z"
   }
 ]

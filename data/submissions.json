@@ -1,5 +1,18 @@
 [
   {
+    "_id": "6a57e740bb529455d4ce7b41",
+    "month": "2026-08",
+    "userId": "6a5795428ed29f665d55433e",
+    "expression": "test",
+    "__v": 0,
+    "definition": "",
+    "example": "",
+    "link": "",
+    "submittedAt": "2026-07-15T20:02:07.992Z",
+    "userComment": "",
+    "username": "Rodri"
+  },
+  {
     "_id": "6a57d94af11da891a28c452f",
     "userId": "6a5795428ed29f665d55433e",
     "username": "Rodri",
@@ -18,7 +31,7 @@
     "expression": "test",
     "userId": "6a5795428ed29f665d55433e",
     "__v": 0,
-    "definition": "",
+    "definition": "a means of testing: such as",
     "example": "",
     "link": "",
     "submittedAt": "2026-07-15T20:01:38.007Z",

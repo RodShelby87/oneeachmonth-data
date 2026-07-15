@@ -216,6 +216,33 @@
   .month-tab-btn:hover { border-color: var(--accent); color: var(--accent); }
   .month-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 3px 10px rgba(124,58,237,.3); }
 
+  /* ── Tooltip ─────────────────────────────────────────────── */
+  .tooltip-wrap { position: relative; display: inline-flex; }
+  .tooltip-box {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--page);
+    font-size: 0.75rem; font-weight: 500; white-space: nowrap;
+    padding: 6px 12px; border-radius: 6px;
+    pointer-events: none; opacity: 0; transition: opacity .18s;
+    z-index: 20;
+  }
+  .tooltip-box::after {
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: var(--ink);
+  }
+  .tooltip-wrap:hover .tooltip-box { opacity: 1; }
+
+  /* ── TTS button ──────────────────────────────────────────── */
+  .tts-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.9rem; padding: 2px 4px; border-radius: 4px;
+    opacity: 0.55; transition: opacity .15s, transform .15s;
+    line-height: 1;
+  }
+  .tts-btn:hover { opacity: 1; }
+  .tts-btn.speaking { opacity: 1; animation: pulse-tts .7s ease-in-out infinite alternate; }
+  @keyframes pulse-tts { from { transform: scale(1); } to { transform: scale(1.25); } }
+
   @media (max-width: 520px) {
     header { flex-direction: column; align-items: flex-start; }
     .header-right { width: 100%; justify-content: space-between; }
@@ -289,7 +316,7 @@
           <div class="section-title">My Submissions <span class="badge" id="my-status-badge"></span></div>
         </div>
         <div class="section-actions">
-          <button class="btn btn-accent2 btn-sm" onclick="openNewSubmission()">✨ New submission</button>
+          <div class="tooltip-wrap"><button class="btn btn-accent2 btn-sm" onclick="openNewSubmission()">✨ New submission</button><div class="tooltip-box">You can pick any month inside</div></div>
         </div>
       </div>
       <div id="my-submissions-list"></div>
@@ -764,7 +791,10 @@ function renderAllGrid() {
       ${!isEmpty && s.definition ? `<div class="card-def">${escHtml(s.definition)}</div>` : ''}
       <div class="card-footer">
         <div class="card-date">${date ? `🗓 ${date}` : ''}</div>
-        ${!isEmpty ? `<div class="card-comment-count">💬 ${commentCount}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:6px">
+          ${!isEmpty ? `<div class="card-comment-count">💬 ${commentCount}</div>` : ''}
+          ${!isEmpty ? `<button class="tts-btn" title="Listen" onclick="event.stopPropagation();speakExpression('${s._id}',this)">🔊</button>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -909,6 +939,53 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── Text-to-speech ────────────────────────────────────────────────────
+let currentUtterance = null;
+
+function speakExpression(subId, btn) {
+  const sub = allSubmissions.find(s => s._id === subId);
+  if (!sub || !sub.expression) return;
+
+  // If already speaking this one, stop it
+  if (currentUtterance && btn.classList.contains('speaking')) {
+    window.speechSynthesis.cancel();
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊';
+    currentUtterance = null;
+    return;
+  }
+
+  // Stop any current speech
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.tts-btn.speaking').forEach(b => {
+    b.classList.remove('speaking');
+    b.textContent = '🔊';
+  });
+
+  const utterance = new SpeechSynthesisUtterance(sub.expression);
+  utterance.lang = 'en-US';
+  utterance.rate = 0.9;
+
+  // Pick an English voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const engVoice = voices.find(v => v.lang.startsWith('en') && v.localService) ||
+                   voices.find(v => v.lang.startsWith('en'));
+  if (engVoice) utterance.voice = engVoice;
+
+  utterance.onstart = () => {
+    btn.classList.add('speaking');
+    btn.textContent = '🔉';
+  };
+  utterance.onend = utterance.onerror = () => {
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊';
+    currentUtterance = null;
+  };
+
+  currentUtterance = utterance;
+  window.speechSynthesis.speak(utterance);
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────

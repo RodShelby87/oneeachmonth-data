@@ -702,13 +702,13 @@ async function saveNewSubmission() {
       return;
     }
     const saved = await r.json();
-    showToast('Saved! Looking up meaning…', 'success');
+    showToast('Saved! Looking up meaning…', 'loading');
     await loadAll();
     renderMySubmissions();
     saveBtn.disabled = false;
     saveBtn.innerHTML = '✨ Save expression';
-    // Silently fetch meaning in background after save
-    if (!editId) silentLookup(saved._id, expression);
+    // Always look up meaning — works for both new and edits
+    silentLookup(saved._id, expression);
   } catch(e) {
     showToast('Could not save. Check your connection.', 'error');
     saveBtn.disabled = false;
@@ -720,36 +720,28 @@ async function saveNewSubmission() {
 
 async function silentLookup(subId, expression) {
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(API_BASE + '/api/lookup-meaning', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 200,
-        system: 'You are a concise English expression explainer. When given an English expression, idiom, or phrase, respond with ONLY a JSON object in this exact format, no markdown, no extra text: {"definition": "one sentence meaning of the expression"}. Keep the definition under 25 words. Be accurate for idioms, slang, and fixed expressions.',
-        messages: [{ role: 'user', content: 'Expression: "' + expression + '"' }]
-      })
+      body: JSON.stringify({ subId, expression })
     });
-    if (!response.ok) { hideToast(); return; }
-    const data = await response.json();
-    const text = (data.content && data.content[0] && data.content[0].text) || '';
-    let definition = '';
-    try {
-      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-      definition = parsed.definition || '';
-    } catch(e) {
-      definition = text.slice(0, 150);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      showToast('Could not find meaning: ' + (err.error || response.status), 'error');
+      return;
     }
-    if (!definition) { hideToast(); return; }
-    await fetch(API_BASE + '/api/submissions/patch-meaning', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subId, definition })
-    });
+    const data = await response.json();
+    if (!data.definition) {
+      showToast('No meaning found for this expression', 'error');
+      return;
+    }
     await loadAll();
     renderMySubmissions();
     renderAllGrid();
     showToast('\u2713 Meaning found!', 'success');
-  } catch(e) { hideToast(); }
+  } catch(e) {
+    showToast('Lookup error: ' + e.message, 'error');
+  }
 }
 
 // ── Month picker ──────────────────────────────────────────────────────

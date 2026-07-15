@@ -216,6 +216,21 @@
   .month-tab-btn:hover { border-color: var(--accent); color: var(--accent); }
   .month-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 3px 10px rgba(124,58,237,.3); }
 
+  /* ── Toast ──────────────────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    padding: 12px 22px; border-radius: 30px;
+    font-size: .85rem; font-weight: 600;
+    z-index: 200; box-shadow: var(--shadow-md);
+    display: flex; align-items: center; gap: 8px;
+    animation: toast-in .22s ease;
+    white-space: nowrap;
+  }
+  #toast.loading { background: var(--ink); color: var(--page); }
+  #toast.success { background: var(--success); color: #fff; }
+  #toast.error   { background: var(--danger);  color: #fff; }
+  @keyframes toast-in { from { opacity:0; transform: translateX(-50%) translateY(10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+
   /* ── Tooltip ─────────────────────────────────────────────── */
   .tooltip-wrap { position: relative; display: inline-flex; }
   .tooltip-box {
@@ -386,7 +401,7 @@
         <input id="ns-expr" type="text" placeholder='Type your expression…' />
       </div>
       <div class="form-group">
-        <label>Link <span class="label-opt">(optional — where you found it)</span></label>
+        <label>Link <span class="label-opt">(optional — link to where you found it)</span></label>
         <input id="ns-link" type="url" placeholder="https://..." />
       </div>
       <div class="form-group">
@@ -394,7 +409,7 @@
         <textarea id="ns-comment" placeholder="Anything you want to say about this expression…" rows="2"></textarea>
       </div>
       <div id="ns-error" class="error-msg"></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="saveNewSubmission()">
+      <button id="ns-save-btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="saveNewSubmission()">
         ✨ Save expression
       </button>
     </div>
@@ -418,6 +433,9 @@
     </div>
   </div>
 </div>
+
+<!-- Toast notification -->
+<div id="toast" style="display:none"></div>
 
 <script>
 const API_BASE = 'https://oneeachmonth-data.onrender.com';
@@ -579,7 +597,7 @@ function renderMySubmissions() {
 }
 
 function renderMySubCard(s) {
-  const linkHtml = s.link ? `<div class="meta-chip">🔗 <a href="${s.link}" target="_blank" rel="noopener">Source link</a></div>` : '';
+  const linkHtml = s.link ? `<div class="meta-chip">🔗 <a href="${s.link}" target="_blank" rel="noopener">Example link</a></div>` : '';
   const commentHtml = s.userComment ? `<div class="meta-chip">💬 ${escHtml(s.userComment)}</div>` : '';
   const date = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
   return `
@@ -653,8 +671,17 @@ async function saveNewSubmission() {
   const link        = document.getElementById('ns-link').value.trim();
   const userComment = document.getElementById('ns-comment').value.trim();
   const errEl       = document.getElementById('ns-error');
+  const saveBtn     = document.getElementById('ns-save-btn');
   errEl.textContent = '';
   if (!expression) { errEl.textContent = 'Please enter an expression.'; return; }
+
+  // Disable button and close modal immediately
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner"></span> Saving…';
+  closeModal('new-sub-modal');
+
+  // Show a global saving toast
+  showToast('Saving expression…', 'loading');
 
   const editId = document.getElementById('new-sub-modal').dataset.editId;
   try {
@@ -664,14 +691,31 @@ async function saveNewSubmission() {
         month: pendingMonth, expression, definition: '', example: '', link, userComment,
         ...(editId ? { editId } : {}) })
     });
-    if (!r.ok) { const d = await r.json(); errEl.textContent = d.error; return; }
+    if (!r.ok) {
+      const d = await r.json();
+      showToast(d.error || 'Could not save.', 'error');
+      // Re-enable button and reopen modal on error
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '✨ Save expression';
+      openModal('new-sub-modal');
+      errEl.textContent = d.error || 'Could not save.';
+      return;
+    }
     const saved = await r.json();
-    closeModal('new-sub-modal');
+    showToast('Saved! Looking up meaning…', 'success');
     await loadAll();
     renderMySubmissions();
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '✨ Save expression';
     // Silently fetch meaning in background after save
     if (!editId) silentLookup(saved._id, expression);
-  } catch(e) { errEl.textContent = 'Could not save. Check your connection.'; }
+  } catch(e) {
+    showToast('Could not save. Check your connection.', 'error');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '✨ Save expression';
+    openModal('new-sub-modal');
+    errEl.textContent = 'Could not save. Check your connection.';
+  }
 }
 
 async function silentLookup(subId, expression) {
@@ -687,7 +731,7 @@ async function silentLookup(subId, expression) {
       for (const def of (m.definitions||[])) { if (def.definition) { definition = def.definition; break; } }
       if (definition) break;
     }
-    if (!definition) return;
+    if (!definition) { hideToast(); return; }
     await fetch(API_BASE + '/api/submissions/patch-meaning', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ subId, definition })
@@ -695,7 +739,8 @@ async function silentLookup(subId, expression) {
     await loadAll();
     renderMySubmissions();
     renderAllGrid();
-  } catch(e) {}
+    showToast('✓ Meaning found!', 'success');
+  } catch(e) { hideToast(); }
 }
 
 // ── Month picker ──────────────────────────────────────────────────────
@@ -814,7 +859,7 @@ async function openCardModal(subId) {
   if (sub.example)    details += `<div class="def-block" style="margin-top:10px"><div class="def-label">✍️ Example</div><p>${escHtml(sub.example)}</p></div>`;
   if (sub.link || sub.userComment) {
     details += '<div class="meta-row">';
-    if (sub.link) details += `<div class="meta-chip">🔗 <a href="${escHtml(sub.link)}" target="_blank" rel="noopener">Source link</a></div>`;
+    if (sub.link) details += `<div class="meta-chip">🔗 <a href="${escHtml(sub.link)}" target="_blank" rel="noopener">Example link</a></div>`;
     if (sub.userComment) details += `<div class="meta-chip">💬 ${escHtml(sub.userComment)}</div>`;
     details += '</div>';
   }
@@ -986,6 +1031,25 @@ function speakExpression(subId, btn) {
 
   currentUtterance = utterance;
   window.speechSynthesis.speak(utterance);
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type = 'loading', duration = 3000) {
+  const el = document.getElementById('toast');
+  el.className = type;
+  el.innerHTML = type === 'loading'
+    ? `<span class="spinner"></span> ${msg}`
+    : msg;
+  el.style.display = 'flex';
+  if (toastTimer) clearTimeout(toastTimer);
+  if (type !== 'loading') {
+    toastTimer = setTimeout(() => { el.style.display = 'none'; }, duration);
+  }
+}
+function hideToast() {
+  document.getElementById('toast').style.display = 'none';
+  if (toastTimer) clearTimeout(toastTimer);
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────

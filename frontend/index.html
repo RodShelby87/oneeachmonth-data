@@ -289,17 +289,17 @@
   <!-- Auth -->
   <div id="auth-panel" style="display:none">
     <div class="auth-card">
-      <span class="auth-emoji" id="auth-emoji">👋</span>
-      <h2 id="auth-title">Welcome back</h2>
-      <p class="sub" id="auth-sub">Enter your username and email — no password needed.</p>
-      <div id="reg-fields" style="display:none">
+      <span class="auth-emoji" id="auth-emoji">✏️</span>
+      <h2 id="auth-title">Get started</h2>
+      <p class="sub" id="auth-sub">Create an account or sign in to track your monthly expressions.</p>
+      <div id="reg-fields">
         <div class="form-group">
           <label>Choose a username</label>
           <input id="reg-username" type="text" placeholder="your_name" autocomplete="username" />
         </div>
       </div>
       <div class="form-group">
-        <label id="identifier-label">Username</label>
+        <label id="identifier-label">Username (confirm)</label>
         <input id="auth-identifier" type="text" placeholder="your_name" autocomplete="username" />
       </div>
       <div class="form-group">
@@ -308,10 +308,10 @@
       </div>
       <div id="auth-error" class="error-msg"></div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="submitAuth()">
-        <span id="auth-btn-text">Sign in</span>
+        <span id="auth-btn-text">Create account</span>
       </button>
       <div class="toggle-auth" id="auth-toggle">
-        Don't have an account? <a onclick="toggleAuthMode()">Create one</a>
+        Already have an account? <a onclick="toggleAuthMode()">Sign in instead</a>
       </div>
     </div>
   </div>
@@ -447,7 +447,7 @@ let allSubmissions = [];
 let comments       = {};  // keyed by submissionId
 let selectedMonth  = null;
 let selectedYear   = null;
-let isRegister     = false;
+let isRegister     = true;
 let activeSubId    = null;  // for comment modal
 let pickerYear     = new Date().getFullYear();
 let pendingMonth   = null;  // month selected in picker for new submission
@@ -481,12 +481,12 @@ function toggleAuthMode() {
   isRegister = !isRegister;
   document.getElementById('auth-emoji').textContent = isRegister ? '🌱' : '👋';
   document.getElementById('auth-title').textContent  = isRegister ? 'Create account' : 'Welcome back';
-  document.getElementById('auth-sub').textContent    = isRegister ? "Pick a username and enter your email — that's all you need." : 'Enter your username and email to continue.';
+  document.getElementById('auth-sub').textContent    = isRegister ? "Pick a username and enter your email — that's all you need." : 'Enter your username and email to sign in.';
   document.getElementById('reg-fields').style.display = isRegister ? '' : 'none';
   document.getElementById('identifier-label').textContent = isRegister ? 'Username (confirm)' : 'Username';
   document.getElementById('auth-btn-text').textContent    = isRegister ? 'Create account' : 'Sign in';
   document.getElementById('auth-toggle').innerHTML = isRegister
-    ? 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>'
+    ? 'Already have an account? <a onclick="toggleAuthMode()">Sign in instead</a>'
     : "Don't have an account? <a onclick=\"toggleAuthMode()\">Create one</a>";
   document.getElementById('auth-error').textContent = '';
 }

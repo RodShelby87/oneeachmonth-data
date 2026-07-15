@@ -1,7 +1,9 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const bcrypt = require('bcryptjs');
+const express    = require('express');
+const mongoose   = require('mongoose');
+const cors       = require('cors');
+const bcrypt     = require('bcryptjs');
+const nodemailer = require('nodemailer');
+const cron       = require('node-cron');
 const { Octokit } = require('@octokit/rest');
 require('dotenv').config();
 
@@ -25,9 +27,9 @@ const submissionSchema = new mongoose.Schema({
   month:       { type: String, required: true },
   expression:  { type: String, default: '' },
   definition:  { type: String, default: '' },
-  example:     { type: String, default: '' },      // user-written example
-  link:        { type: String, default: '' },      // optional source link
-  userComment: { type: String, default: '' },      // submitter's comment
+  example:     { type: String, default: '' },
+  link:        { type: String, default: '' },
+  userComment: { type: String, default: '' },
   submittedAt: { type: Date }
 });
 
@@ -61,6 +63,76 @@ async function syncToGitHub(data) {
     });
   } catch(err) { console.error('GitHub sync failed:', err.message); }
 }
+
+// ── Email (Nodemailer via Gmail) ─────────────────────────────────────
+function createTransporter() {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return null;
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
+  });
+}
+
+async function sendReminderEmails() {
+  const transporter = createTransporter();
+  if (!transporter) { console.log('Email not configured — skipping reminders.'); return; }
+
+  // Previous month string e.g. "2026-06"
+  const now = new Date();
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    .toISOString().slice(0, 7);
+
+  const appUrl = process.env.APP_URL || 'https://oneeachmonth.onrender.com';
+
+  const users = await User.find();
+  let sent = 0;
+
+  for (const user of users) {
+    // Check if they have a filled submission for previous month
+    const sub = await Submission.findOne({
+      userId: user._id,
+      month: prevMonth,
+      expression: { $ne: '' }
+    });
+    if (sub) continue; // already submitted — no email needed
+
+    try {
+      await transporter.sendMail({
+        from: `"OneEachMonth" <${process.env.GMAIL_USER}>`,
+        to: user.email,
+        subject: `Hey ${user.username}, your expression for last month is missing 👀`,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fffbf5;border-radius:12px">
+            <h1 style="font-size:1.5rem;margin-bottom:8px;color:#1c1917">
+              Your monthly expression is still missing, lazy ass 😤
+            </h1>
+            <p style="color:#57534e;font-size:1rem;line-height:1.6;margin-bottom:24px">
+              You didn't submit anything for <strong>${prevMonth}</strong>.<br>
+              It only takes a minute — go find something good!
+            </p>
+            <a href="${appUrl}" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-weight:700;font-size:1rem;padding:14px 28px;border-radius:8px;text-decoration:none">
+              Submit it here →
+            </a>
+            <p style="color:#a8a29e;font-size:0.8rem;margin-top:32px">
+              — OneEachMonth
+            </p>
+          </div>
+        `
+      });
+      sent++;
+      console.log(`Reminder sent to ${user.email}`);
+    } catch(err) {
+      console.error(`Failed to send to ${user.email}:`, err.message);
+    }
+  }
+  console.log(`Monthly reminders done. Sent: ${sent}/${users.length}`);
+}
+
+// ── Cron: 1st of every month at 9:00am UTC ──────────────────────────
+cron.schedule('0 9 1 * *', () => {
+  console.log('Running monthly reminder cron...');
+  sendReminderEmails();
+});
 
 // ── Auth ─────────────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
@@ -106,23 +178,19 @@ app.post('/api/submissions', async (req, res) => {
   try {
     const { userId, username, month, expression, definition, example, link, userComment, editId } = req.body;
     const targetMonth = month || new Date().toISOString().slice(0, 7);
-
     let sub;
     if (editId) {
-      // Edit existing submission by ID
       sub = await Submission.findByIdAndUpdate(
         editId,
         { expression, definition, example, link, userComment, submittedAt: new Date() },
         { new: true }
       );
     } else {
-      // Create new or update existing slot for this user+month
       sub = await Submission.findOneAndUpdate(
-        { userId, month: targetMonth, expression: '' },  // find empty slot or create
+        { userId, month: targetMonth, expression: '' },
         { expression, definition, example, link, userComment, submittedAt: new Date(), username },
         { upsert: true, new: true }
       );
-      // If no empty slot found, create a brand new one (multiple submissions per month)
       if (!sub || !sub.expression) {
         sub = await Submission.create({
           userId, username, month: targetMonth,
@@ -131,7 +199,6 @@ app.post('/api/submissions', async (req, res) => {
         });
       }
     }
-
     const allSubs = await Submission.find().sort({ month: -1, username: 1 });
     await syncToGitHub(allSubs);
     res.json(sub);
@@ -144,10 +211,25 @@ app.post('/api/ensure-slots', async (req, res) => {
     const users = await User.find();
     for (const user of users) {
       const existing = await Submission.findOne({ userId: user._id, month });
-      if (!existing) {
-        await Submission.create({ userId: user._id, username: user.username, month, expression: '' });
-      }
+      if (!existing) await Submission.create({ userId: user._id, username: user.username, month, expression: '' });
     }
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/submissions/patch-meaning', async (req, res) => {
+  try {
+    const { subId, definition } = req.body;
+    if (!subId || !definition) return res.status(400).json({ error: 'Missing fields' });
+    await Submission.findByIdAndUpdate(subId, { definition });
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/submissions/:id', async (req, res) => {
+  try {
+    await Submission.findByIdAndDelete(req.params.id);
+    await Comment.deleteMany({ subId: req.params.id });
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -169,24 +251,10 @@ app.post('/api/comments', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Patch meaning (background auto-lookup) ───────────────────────────
-app.post('/api/submissions/patch-meaning', async (req, res) => {
-  try {
-    const { subId, definition } = req.body;
-    if (!subId || !definition) return res.status(400).json({ error: 'Missing fields' });
-    await Submission.findByIdAndUpdate(subId, { definition });
-    res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
-});
-
-// ── Delete submission ─────────────────────────────────────────────────
-app.delete('/api/submissions/:id', async (req, res) => {
-  try {
-    await Submission.findByIdAndDelete(req.params.id);
-    // Also delete associated comments
-    await Comment.deleteMany({ subId: req.params.id });
-    res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+// ── Manual trigger (for testing) ─────────────────────────────────────
+app.post('/api/send-reminders', async (req, res) => {
+  try { await sendReminderEmails(); res.json({ ok: true }); }
+  catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 app.listen(process.env.PORT || 3001, () =>

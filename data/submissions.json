@@ -1,19 +1,6 @@
 [
   {
-    "_id": "6a57cd2812411451b9d41b83",
-    "userId": "6a5795428ed29f665d55433e",
-    "username": "Rodri",
-    "month": "2026-07",
-    "expression": "Hold your horses",
-    "definition": "",
-    "example": "",
-    "link": "https://www.youtube.com/watch?v=EOXcbJimkE4",
-    "userComment": "",
-    "__v": 0,
-    "submittedAt": "2026-07-15T18:27:16.553Z"
-  },
-  {
-    "_id": "6a57d106bb529455d4ce710d",
+    "_id": "6a57d3fdbb529455d4ce7264",
     "expression": "Hold your horses",
     "userId": "6a5795428ed29f665d55433e",
     "month": "2026-07",
@@ -21,33 +8,7 @@
     "definition": "",
     "example": "",
     "link": "https://www.youtube.com/watch?v=EOXcbJimkE4",
-    "submittedAt": "2026-07-15T18:27:18.227Z",
-    "userComment": "",
-    "username": "Rodri"
-  },
-  {
-    "_id": "6a57d106bb529455d4ce710f",
-    "expression": "Hold your horses",
-    "userId": "6a5795428ed29f665d55433e",
-    "month": "2026-07",
-    "__v": 0,
-    "definition": "",
-    "example": "",
-    "link": "https://www.youtube.com/watch?v=EOXcbJimkE4",
-    "submittedAt": "2026-07-15T18:27:18.615Z",
-    "userComment": "",
-    "username": "Rodri"
-  },
-  {
-    "_id": "6a57d106bb529455d4ce7110",
-    "expression": "Hold your horses",
-    "userId": "6a5795428ed29f665d55433e",
-    "month": "2026-07",
-    "__v": 0,
-    "definition": "",
-    "example": "",
-    "link": "https://www.youtube.com/watch?v=EOXcbJimkE4",
-    "submittedAt": "2026-07-15T18:27:18.788Z",
+    "submittedAt": "2026-07-15T18:39:57.392Z",
     "userComment": "",
     "username": "Rodri"
   }

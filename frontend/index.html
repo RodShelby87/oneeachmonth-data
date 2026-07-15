@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OneEachMonth</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ── Tokens ──────────────────────────────────────────────── */
+  :root {
+    --ink:      #1a1a2e;
+    --ink-soft: #4a4a6a;
+    --page:     #f8f7f4;
+    --card:     #ffffff;
+    --rule:     #e2e0da;
+    --accent:   #2d6a4f;
+    --accent-light: #d8f3dc;
+    --accent2:  #b7791f;
+    --empty:    #f0efeb;
+    --danger:   #c53030;
+    --radius:   10px;
+    --shadow:   0 2px 12px rgba(26,26,46,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── Layout ──────────────────────────────────────────────── */
+  #app { max-width: 860px; margin: 0 auto; padding: 0 20px 60px; }
+
+  header {
+    padding: 32px 0 24px;
+    border-bottom: 1.5px solid var(--ink);
+    margin-bottom: 40px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+  }
+  .logo span { color: var(--accent); }
+
+  .tagline {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  #user-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: var(--radius);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary  { background: var(--accent); color: #fff; }
+  .btn-outline  { background: transparent; border: 1.5px solid var(--ink); color: var(--ink); }
+  .btn-ghost    { background: transparent; color: var(--ink-soft); padding: 6px 10px; }
+  .btn:hover    { opacity: .85; }
+  .btn-sm       { padding: 6px 14px; font-size: 0.8rem; }
+  .btn-danger   { background: var(--danger); color: #fff; }
+
+  /* ── Forms ───────────────────────────────────────────────── */
+  .form-group   { margin-bottom: 18px; }
+  label         { display: block; font-size: 0.8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
+  input, textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--rule);
+    border-radius: var(--radius);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    background: var(--card);
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .error-msg { color: var(--danger); font-size: 0.82rem; margin-top: 8px; }
+  .success-msg { color: var(--accent); font-size: 0.82rem; margin-top: 8px; }
+
+  /* ── Auth Panel ──────────────────────────────────────────── */
+  #auth-panel {
+    max-width: 420px;
+    margin: 60px auto;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 40px;
+    box-shadow: var(--shadow);
+  }
+
+  #auth-panel h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+  }
+
+  #auth-panel .sub {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-bottom: 28px;
+  }
+
+  .toggle-auth {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .toggle-auth a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ── Month pill ──────────────────────────────────────────── */
+  .month-label {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--page);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+
+  /* ── Submission card ─────────────────────────────────────── */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title .badge {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* My submission box */
+  #my-submission {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 48px;
+    border-left: 4px solid var(--accent);
+  }
+
+  #my-submission .expression-display {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+
+  #my-submission .def-block {
+    background: var(--accent-light);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: 14px;
+  }
+
+  #my-submission .def-block .def-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  #my-submission .def-block p {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  /* All submissions grid */
+  #all-submissions {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .sub-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    transition: transform .15s;
+  }
+
+  .sub-card:hover { transform: translateY(-2px); }
+
+  .sub-card.empty {
+    background: var(--empty);
+    box-shadow: none;
+    border: 1.5px dashed var(--rule);
+  }
+
+  .sub-card .card-user {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 8px;
+  }
+
+  .sub-card .card-expr {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--ink);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  .sub-card.empty .card-expr {
+    color: var(--ink-soft);
+    font-style: italic;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .sub-card .card-def {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    border-top: 1px solid var(--rule);
+    padding-top: 8px;
+    margin-top: 8px;
+  }
+
+  .sub-card .card-date {
+    font-size: 0.72rem;
+    color: var(--rule);
+    margin-top: 10px;
+  }
+
+  /* ── Month nav ───────────────────────────────────────────── */
+  .month-nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .month-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid var(--rule);
+    background: var(--card);
+    color: var(--ink-soft);
+    transition: all .15s;
+  }
+
+  .month-btn.active {
+    background: var(--ink);
+    color: var(--page);
+    border-color: var(--ink);
+  }
+
+  /* ── Lookup spinner ──────────────────────────────────────── */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--rule);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    vertical-align: middle;
+    margin-left: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Tabs ────────────────────────────────────────────────── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--rule);
+    margin-bottom: 32px;
+  }
+
+  .tab-btn {
+    padding: 10px 24px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color .15s;
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── Responsive ──────────────────────────────────────────── */
+  @media (max-width: 520px) {
+    header { flex-direction: column; }
+    #all-submissions { grid-template-columns: 1fr; }
+    #auth-panel { padding: 28px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div>
+      <div class="logo">One<span>EachMonth</span></div>
+      <div class="tagline">One expression. Every month.</div>
+    </div>
+    <div id="user-bar"></div>
+  </header>
+
+  <div id="auth-panel" style="display:none">
+    <h2 id="auth-title">Welcome back</h2>
+    <p class="sub" id="auth-sub">Sign in to continue your trace.</p>
+
+    <div id="reg-only" style="display:none">
+      <div class="form-group">
+        <label>Username</label>
+        <input id="reg-username" type="text" placeholder="your_name" autocomplete="username" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label id="identifier-label">Username or Email</label>
+      <input id="auth-identifier" type="text" placeholder="username or email" autocomplete="email" />
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+
+    <div id="auth-error" class="error-msg"></div>
+
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="submitAuth()">
+      <span id="auth-btn-text">Sign in</span>
+    </button>
+
+    <div class="toggle-auth" id="auth-toggle">
+      Don't have an account? <a onclick="toggleAuthMode()">Create one</a>
+    </div>
+  </div>
+
+  <div id="main-panel" style="display:none">
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('submit', this)">My Submission</button>
+      <button class="tab-btn" onclick="switchTab('all', this)">All Expressions</button>
+    </div>
+
+    <!-- Submit tab -->
+    <div class="tab-pane active" id="tab-submit">
+      <div class="month-label" id="current-month-label"></div>
+      <div class="section-title">
+        This month's expression
+        <span class="badge" id="my-status-badge"></span>
+      </div>
+
+      <div id="my-submission">
+        <div id="submitted-view" style="display:none">
+          <div class="expression-display" id="my-expr-display"></div>
+          <div class="def-block" id="my-def-block" style="display:none">
+            <div class="def-label">Meaning &amp; Example</div>
+            <p id="my-def-text"></p>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn btn-outline btn-sm" onclick="editSubmission()">Edit</button>
+          </div>
+        </div>
+
+        <div id="input-view">
+          <div class="form-group">
+            <label>Your English expression for <span id="month-for-label"></span></label>
+            <textarea id="expr-input" placeholder='e.g. "Hit the nail on the head"' rows="3"></textarea>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="submitExpression()">
+              Save &amp; look up meaning
+            </button>
+            <span id="lookup-spinner" style="display:none"><span class="spinner"></span> Looking up...</span>
+          </div>
+          <div id="submit-error" class="error-msg"></div>
+          <div id="lookup-result" style="margin-top:16px;display:none">
+            <div class="def-block">
+              <div class="def-label">Meaning &amp; Example</div>
+              <p id="lookup-text"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All tab -->
+    <div class="tab-pane" id="tab-all">
+      <div class="month-nav" id="month-nav"></div>
+      <div class="section-title">
+        Expressions
+        <span class="badge" id="all-count-badge"></span>
+      </div>
+      <div id="all-submissions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config — replace with your Render backend URL ────────────────────
+const API_BASE = 'YOUR_RENDER_BACKEND_URL';
+
+// ── State ─────────────────────────────────────────────────────────────
+let currentUser = null;
+let allSubmissions = [];
+let selectedMonth = null;
+let isRegister = false;
+
+// ── Init ──────────────────────────────────────────────────────────────
+(async function init() {
+  const saved = localStorage.getItem('oneEachMonth_user');
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    await showMain();
+  } else {
+    showAuth();
+  }
+})();
+
+// ── Auth ──────────────────────────────────────────────────────────────
+function showAuth() {
+  document.getElementById('auth-panel').style.display = '';
+  document.getElementById('main-panel').style.display = 'none';
+  document.getElementById('user-bar').innerHTML = '';
+}
+
+function toggleAuthMode() {
+  isRegister = !isRegister;
+  document.getElementById('auth-title').textContent = isRegister ? 'Create account' : 'Welcome back';
+  document.getElementById('auth-sub').textContent = isRegister
+    ? 'Join OneEachMonth and start your trace.'
+    : 'Sign in to continue your trace.';
+  document.getElementById('reg-only').style.display = isRegister ? '' : 'none';
+  document.getElementById('identifier-label').textContent = isRegister ? 'Email' : 'Username or Email';
+  document.getElementById('auth-identifier').placeholder = isRegister ? 'you@email.com' : 'username or email';
+  document.getElementById('auth-btn-text').textContent = isRegister ? 'Create account' : 'Sign in';
+  document.getElementById('auth-toggle').innerHTML = isRegister
+    ? 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>'
+    : "Don't have an account? <a onclick=\"toggleAuthMode()\">Create one</a>";
+  document.getElementById('auth-error').textContent = '';
+}
+
+async function submitAuth() {
+  const identifier = document.getElementById('auth-identifier').value.trim();
+  const password   = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent = '';
+
+  if (!identifier || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
+
+  try {
+    let endpoint, body;
+    if (isRegister) {
+      const username = document.getElementById('reg-username').value.trim();
+      if (!username) { errEl.textContent = 'Username is required.'; return; }
+      endpoint = '/api/register';
+      body = { username, email: identifier, password };
+    } else {
+      endpoint = '/api/login';
+      body = { identifier, password };
+    }
+
+    const r = await fetch(API_BASE + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (!r.ok) { errEl.textContent = data.error || 'Something went wrong.'; return; }
+
+    currentUser = data;
+    localStorage.setItem('oneEachMonth_user', JSON.stringify(currentUser));
+    await showMain();
+  } catch (e) {
+    errEl.textContent = 'Cannot reach server. Check your connection.';
+  }
+}
+
+// ── Main ──────────────────────────────────────────────────────────────
+async function showMain() {
+  document.getElementById('auth-panel').style.display = 'none';
+  document.getElementById('main-panel').style.display = '';
+
+  document.getElementById('user-bar').innerHTML = `
+    <span>Hi, <strong>${currentUser.username}</strong></span>
+    <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button>
+  `;
+
+  // Ensure monthly slots exist
+  await fetch(API_BASE + '/api/ensure-slots', { method: 'POST' }).catch(() => {});
+
+  await loadAll();
+  renderMySubmission();
+}
+
+function signOut() {
+  localStorage.removeItem('oneEachMonth_user');
+  currentUser = null;
+  showAuth();
+}
+
+// ── Data ──────────────────────────────────────────────────────────────
+async function loadAll() {
+  try {
+    const r = await fetch(API_BASE + '/api/submissions');
+    allSubmissions = await r.json();
+  } catch (e) {
+    allSubmissions = [];
+  }
+
+  // Compute available months
+  const months = [...new Set(allSubmissions.map(s => s.month))].sort().reverse();
+  selectedMonth = selectedMonth || months[0] || currentMonthStr();
+
+  renderMonthNav(months);
+  renderAllGrid();
+}
+
+function currentMonthStr() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+function formatMonth(m) {
+  const [y, mo] = m.split('-');
+  return new Date(+y, +mo - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+// ── My submission ─────────────────────────────────────────────────────
+function renderMySubmission() {
+  const m = currentMonthStr();
+  document.getElementById('current-month-label').textContent = formatMonth(m);
+  document.getElementById('month-for-label').textContent = formatMonth(m);
+
+  const mine = allSubmissions.find(s => s.userId === currentUser._id && s.month === m);
+
+  if (mine && mine.expression) {
+    document.getElementById('my-status-badge').textContent = 'Submitted ✓';
+    document.getElementById('my-status-badge').style.background = '#d8f3dc';
+    document.getElementById('my-status-badge').style.color = '#2d6a4f';
+    document.getElementById('submitted-view').style.display = '';
+    document.getElementById('input-view').style.display = 'none';
+    document.getElementById('my-expr-display').textContent = `"${mine.expression}"`;
+
+    if (mine.definition) {
+      document.getElementById('my-def-block').style.display = '';
+      document.getElementById('my-def-text').innerHTML =
+        `<strong>Meaning:</strong> ${mine.definition}${mine.example ? `<br><br><strong>Example:</strong> <em>${mine.example}</em>` : ''}`;
+    } else {
+      document.getElementById('my-def-block').style.display = 'none';
+    }
+  } else {
+    document.getElementById('my-status-badge').textContent = 'Pending';
+    document.getElementById('my-status-badge').style.background = '#fff3cd';
+    document.getElementById('my-status-badge').style.color = '#856404';
+    document.getElementById('submitted-view').style.display = 'none';
+    document.getElementById('input-view').style.display = '';
+    document.getElementById('expr-input').value = mine?.expression || '';
+    document.getElementById('lookup-result').style.display = 'none';
+  }
+}
+
+function editSubmission() {
+  const m = currentMonthStr();
+  const mine = allSubmissions.find(s => s.userId === currentUser._id && s.month === m);
+  document.getElementById('submitted-view').style.display = 'none';
+  document.getElementById('input-view').style.display = '';
+  document.getElementById('expr-input').value = mine?.expression || '';
+  document.getElementById('lookup-result').style.display = 'none';
+}
+
+async function submitExpression() {
+  const expression = document.getElementById('expr-input').value.trim();
+  const errEl = document.getElementById('submit-error');
+  errEl.textContent = '';
+
+  if (!expression) { errEl.textContent = 'Please enter an expression.'; return; }
+
+  // Lookup definition
+  document.getElementById('lookup-spinner').style.display = '';
+  let definition = '', example = '';
+  try {
+    const lookup = await lookupExpression(expression);
+    definition = lookup.definition;
+    example = lookup.example;
+    if (definition) {
+      document.getElementById('lookup-text').innerHTML =
+        `<strong>Meaning:</strong> ${definition}${example ? `<br><br><strong>Example:</strong> <em>${example}</em>` : ''}`;
+      document.getElementById('lookup-result').style.display = '';
+    }
+  } catch (_) {}
+  document.getElementById('lookup-spinner').style.display = 'none';
+
+  // Save
+  try {
+    const r = await fetch(API_BASE + '/api/submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUser._id,
+        username: currentUser.username,
+        expression, definition, example
+      })
+    });
+    if (!r.ok) { const d = await r.json(); errEl.textContent = d.error; return; }
+    await loadAll();
+    renderMySubmission();
+  } catch (e) {
+    errEl.textContent = 'Could not save. Check your connection.';
+  }
+}
+
+// ── Free Dictionary API ───────────────────────────────────────────────
+async function lookupExpression(expr) {
+  // Try each word of the expression, starting with the most meaningful
+  const words = expr.replace(/["""'']/g, '').split(/\s+/).filter(w => w.length > 3);
+  const keyword = words[0] || expr;
+
+  const r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(keyword)}`);
+  if (!r.ok) return { definition: '', example: '' };
+
+  const data = await r.json();
+  if (!Array.isArray(data) || !data[0]) return { definition: '', example: '' };
+
+  const meanings = data[0].meanings || [];
+  let definition = '', example = '';
+
+  for (const m of meanings) {
+    for (const def of (m.definitions || [])) {
+      if (def.definition) { definition = def.definition; }
+      if (def.example)    { example = def.example; }
+      if (definition && example) break;
+    }
+    if (definition) break;
+  }
+
+  return { definition, example };
+}
+
+// ── All submissions grid ──────────────────────────────────────────────
+function renderMonthNav(months) {
+  const nav = document.getElementById('month-nav');
+  nav.innerHTML = months.map(m => `
+    <button class="month-btn ${m === selectedMonth ? 'active' : ''}"
+      onclick="selectMonth('${m}')">${formatMonth(m)}</button>
+  `).join('');
+}
+
+function selectMonth(m) {
+  selectedMonth = m;
+  renderMonthNav([...new Set(allSubmissions.map(s => s.month))].sort().reverse());
+  renderAllGrid();
+}
+
+function renderAllGrid() {
+  const forMonth = allSubmissions.filter(s => s.month === selectedMonth);
+  const filled = forMonth.filter(s => s.expression).length;
+  document.getElementById('all-count-badge').textContent = `${filled} / ${forMonth.length} submitted`;
+
+  const grid = document.getElementById('all-submissions');
+  if (!forMonth.length) {
+    grid.innerHTML = '<p style="color:var(--ink-soft);font-size:.9rem">No data for this month yet.</p>';
+    return;
+  }
+
+  grid.innerHTML = forMonth.map(s => {
+    const isEmpty = !s.expression;
+    const date = s.submittedAt
+      ? new Date(s.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : '';
+    return `
+      <div class="sub-card ${isEmpty ? 'empty' : ''}">
+        <div class="card-user">${s.username}</div>
+        <div class="card-expr">${isEmpty ? 'Not submitted yet' : `"${s.expression}"`}</div>
+        ${!isEmpty && s.definition ? `<div class="card-def">${s.definition}</div>` : ''}
+        ${date ? `<div class="card-date">Submitted ${date}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+</script>
+</body>
+</html>

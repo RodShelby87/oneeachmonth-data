@@ -9,7 +9,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '2mb' })); // allow slightly larger payloads
 
 mongoose.connect(process.env.MONGODB_URI);
 
@@ -77,24 +77,21 @@ async function sendReminderEmails() {
   const transporter = createTransporter();
   if (!transporter) { console.log('Email not configured — skipping reminders.'); return; }
 
-  // Previous month string e.g. "2026-06"
   const now = new Date();
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     .toISOString().slice(0, 7);
 
   const appUrl = process.env.APP_URL || 'https://oneeachmonth.onrender.com';
-
   const users = await User.find();
   let sent = 0;
 
   for (const user of users) {
-    // Check if they have a filled submission for previous month
     const sub = await Submission.findOne({
       userId: user._id,
       month: prevMonth,
       expression: { $ne: '' }
     });
-    if (sub) continue; // already submitted — no email needed
+    if (sub) continue;
 
     try {
       await transporter.sendMail({
@@ -113,9 +110,7 @@ async function sendReminderEmails() {
             <a href="${appUrl}" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-weight:700;font-size:1rem;padding:14px 28px;border-radius:8px;text-decoration:none">
               Submit it here →
             </a>
-            <p style="color:#a8a29e;font-size:0.8rem;margin-top:32px">
-              — OneEachMonth
-            </p>
+            <p style="color:#a8a29e;font-size:0.8rem;margin-top:32px">— OneEachMonth</p>
           </div>
         `
       });
@@ -162,7 +157,69 @@ app.post('/api/login-no-password', async (req, res) => {
       email: email
     });
     if (!user) return res.status(400).json({ error: 'No account found with that username and email' });
-    res.json({ _id: user._id, username: user.username, email: user.email });
+    res.json({ _id: user._id, username: user.username, email: user.email, createdAt: user.createdAt });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── User profile: update ─────────────────────────────────────────────
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const { username, email } = req.body;
+    if (!username || !email) return res.status(400).json({ error: 'Username and email required' });
+
+    // Check uniqueness against OTHER users
+    const existing = await User.findOne({
+      $or: [{ username }, { email }],
+      _id: { $ne: req.params.id }
+    });
+    if (existing) {
+      const field = existing.username === username ? 'username' : 'email';
+      return res.status(400).json({ error: `That ${field} is already taken` });
+    }
+
+    // Get old username before update (needed for comment cascade)
+    const oldUser = await User.findById(req.params.id);
+    if (!oldUser) return res.status(404).json({ error: 'User not found' });
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { username, email },
+      { new: true }
+    );
+
+    // Cascade username change to submissions and comments
+    await Submission.updateMany({ userId: req.params.id }, { username });
+    if (oldUser.username !== username) {
+      await Comment.updateMany({ username: oldUser.username }, { username });
+    }
+
+    res.json({ _id: user._id, username: user.username, email: user.email, createdAt: user.createdAt });
+  } catch(err) {
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyValue)[0];
+      return res.status(400).json({ error: `That ${field} is already taken` });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── User profile: delete account ─────────────────────────────────────
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Delete all their submissions (and comments on those submissions)
+    const subs = await Submission.find({ userId: req.params.id });
+    for (const sub of subs) {
+      await Comment.deleteMany({ subId: sub._id });
+    }
+    await Submission.deleteMany({ userId: req.params.id });
+
+    // Also delete comments they left on other people's submissions
+    await Comment.deleteMany({ username: user.username });
+
+    res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -226,7 +283,6 @@ app.post('/api/lookup-meaning', async (req, res) => {
     const key = process.env.MERRIAM_WEBSTER_KEY;
     if (!key) return res.status(500).json({ error: 'API key not configured' });
 
-    // Try the full expression first, then fall back to first meaningful word
     const queries = [
       expression.toLowerCase().trim(),
       expression.toLowerCase().replace(/["""'']/g, '').trim(),
@@ -234,42 +290,25 @@ app.post('/api/lookup-meaning', async (req, res) => {
     ].filter(Boolean);
 
     let definition = '';
-
     for (const query of queries) {
       const url = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${encodeURIComponent(query)}?key=${key}`;
       const r = await fetch(url);
       if (!r.ok) continue;
       const data = await r.json();
-
-      // MW returns an array — first item is the best match
       if (!Array.isArray(data) || !data[0]) continue;
-
-      // If it returned strings instead of objects, it means "no match, here are suggestions"
       if (typeof data[0] === 'string') continue;
-
-      // Look for a shortdef (short definition) first — most concise
-      if (data[0].shortdef && data[0].shortdef.length > 0) {
-        definition = data[0].shortdef[0];
-        break;
-      }
-
-      // Fall back to first full definition
+      if (data[0].shortdef && data[0].shortdef.length > 0) { definition = data[0].shortdef[0]; break; }
       const defs = data[0].def;
       if (defs && defs[0] && defs[0].sseq) {
         const sense = defs[0].sseq[0][0][1];
         if (sense && sense.dt && sense.dt[0] && sense.dt[0][0] === 'text') {
-          // Strip MW markup like {bc}, {it}, {/it} etc.
-          definition = sense.dt[0][1].replace(/\{[^}]+\}/g, '').trim();
-          break;
+          definition = sense.dt[0][1].replace(/\{[^}]+\}/g, '').trim(); break;
         }
       }
     }
 
     if (!definition) return res.status(404).json({ error: 'No definition found' });
-
-    // Save it to the submission
     if (subId) await Submission.findByIdAndUpdate(subId, { definition });
-
     res.json({ definition });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });

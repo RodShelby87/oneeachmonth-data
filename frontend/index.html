@@ -63,7 +63,8 @@
   .tagline { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
   .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   #user-greeting { font-size: 0.85rem; color: var(--ink-soft); display: flex; align-items: center; gap: 8px; }
-  .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden; position: relative; cursor: pointer; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
   .theme-toggle { width: 44px; height: 24px; background: var(--rule); border-radius: 12px; border: none; cursor: pointer; position: relative; transition: background .2s; flex-shrink: 0; }
   .theme-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--card); box-shadow: var(--shadow-sm); transition: transform .2s; }
   [data-theme="dark"] .theme-toggle { background: var(--accent); }
@@ -347,6 +348,43 @@
   }
   #my-month-empty .empty-icon { font-size: 2.2rem; margin-bottom: 10px; }
 
+  /* ── Profile tab ─────────────────────────────────────────── */
+  .profile-layout { display: grid; grid-template-columns: 200px 1fr; gap: 28px; align-items: start; }
+  @media (max-width: 640px) { .profile-layout { grid-template-columns: 1fr; } }
+
+  .profile-avatar-col { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .profile-avatar-ring {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; font-weight: 900; color: #fff;
+    overflow: hidden; position: relative; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(124,58,237,.3);
+    transition: box-shadow .2s;
+    flex-shrink: 0;
+  }
+  .profile-avatar-ring:hover { box-shadow: 0 6px 28px rgba(124,58,237,.45); }
+  .profile-avatar-ring img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+  .profile-avatar-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; opacity: 0; transition: opacity .18s; border-radius: 50%;
+  }
+  .profile-avatar-ring:hover .profile-avatar-overlay { opacity: 1; }
+  .profile-avatar-hint { font-size: 0.72rem; color: var(--ink-faint); text-align: center; line-height: 1.4; }
+
+  .profile-card { background: var(--card); border-radius: var(--radius); padding: 28px; border: 1px solid var(--rule); box-shadow: var(--shadow-sm); margin-bottom: 18px; }
+  .profile-card h3 { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+
+  .danger-zone { background: var(--card); border-radius: var(--radius); padding: 28px; border: 1.5px solid var(--danger); box-shadow: var(--shadow-sm); margin-top: 28px; }
+  .danger-zone h3 { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 700; color: var(--danger); margin-bottom: 8px; }
+  .danger-zone p { font-size: 0.84rem; color: var(--ink-soft); margin-bottom: 18px; line-height: 1.6; }
+
+  .profile-stat { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+  .profile-stat:last-child { border-bottom: none; padding-bottom: 0; }
+  .profile-stat-num { font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 900; color: var(--accent); min-width: 40px; }
+  .profile-stat-label { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.4; }
+
   @media (max-width: 520px) {
     header { flex-direction: column; align-items: flex-start; }
     .header-right { width: 100%; justify-content: space-between; }
@@ -417,6 +455,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('submit',this)">✍️ My Submissions</button>
       <button class="tab-btn" onclick="switchTab('all',this)">🌍 All Expressions</button>
+      <button class="tab-btn" onclick="switchTab('profile',this)">👤 Profile</button>
     </div>
 
     <!-- My Submissions tab -->
@@ -444,6 +483,58 @@
         Expressions <span class="badge badge-neutral" id="all-count-badge"></span>
       </div>
       <div id="all-submissions"></div>
+    </div>
+
+    <!-- Profile tab -->
+    <div class="tab-pane" id="tab-profile">
+      <div class="section-title" style="margin-bottom:28px">Your Profile</div>
+
+      <div class="profile-layout">
+        <!-- Avatar column -->
+        <div class="profile-avatar-col">
+          <div class="profile-avatar-ring" onclick="triggerAvatarUpload()" title="Change picture">
+            <span id="profile-avatar-initials"></span>
+            <img id="profile-avatar-img" src="" style="display:none" alt="Profile picture" />
+            <div class="profile-avatar-overlay">📷</div>
+          </div>
+          <div class="profile-avatar-hint">Click to upload<br>a profile picture</div>
+          <button class="btn btn-outline btn-xs" id="remove-avatar-btn" onclick="removeAvatar()" style="display:none">Remove photo</button>
+          <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)" />
+        </div>
+
+        <!-- Info column -->
+        <div>
+          <!-- Edit info card -->
+          <div class="profile-card">
+            <h3>✏️ Account info</h3>
+            <div class="form-group">
+              <label>Username</label>
+              <input id="profile-username" type="text" placeholder="your_name" autocomplete="username" />
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Email</label>
+              <input id="profile-email" type="email" placeholder="you@email.com" autocomplete="email" />
+            </div>
+            <div id="profile-info-msg" style="margin-top:10px;font-size:.82rem"></div>
+            <button class="btn btn-primary btn-sm" style="margin-top:16px" onclick="saveProfileInfo()">Save changes</button>
+          </div>
+
+          <!-- Stats card -->
+          <div class="profile-card">
+            <h3>📊 Your stats</h3>
+            <div id="profile-stats"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger zone -->
+      <div class="danger-zone">
+        <h3>⚠️ Danger zone</h3>
+        <p>Permanently delete your account and all your submissions. This cannot be undone — all your expressions and comments will be gone forever.</p>
+        <button class="btn btn-sm" style="background:var(--danger);color:#fff;box-shadow:0 4px 14px rgba(220,38,38,.3)" onclick="confirmDeleteAccount()">
+          🗑 Delete my account
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -707,18 +798,31 @@ async function submitAuth() {
 
 // ── Main ──────────────────────────────────────────────────────────────
 async function showMain() {
-  const initials = currentUser.username.slice(0,2).toUpperCase();
-  document.getElementById('user-greeting').innerHTML = `
-    <div class="avatar">${initials}</div>
-    <span>Hi, <strong>${currentUser.username}</strong></span>
-    <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button>
-  `;
+  refreshHeaderAvatar();
   await fetch(API_BASE + '/api/ensure-slots', { method:'POST' }).catch(()=>{});
   await loadAll();
   renderMySubmissions();
+  renderProfileTab();
   hideLoader();
   document.getElementById('auth-panel').style.display = 'none';
   document.getElementById('main-panel').style.display = '';
+}
+
+function getAvatarDataUrl() {
+  return localStorage.getItem('oem_avatar_' + currentUser._id) || '';
+}
+
+function refreshHeaderAvatar() {
+  const initials = currentUser.username.slice(0,2).toUpperCase();
+  const avatarUrl = getAvatarDataUrl();
+  const avatarHtml = avatarUrl
+    ? `<div class="avatar" onclick="switchTabByName('profile')" title="Edit profile"><img src="${avatarUrl}" alt="${escHtml(currentUser.username)}" />${initials}</div>`
+    : `<div class="avatar" onclick="switchTabByName('profile')" title="Edit profile">${initials}</div>`;
+  document.getElementById('user-greeting').innerHTML = `
+    ${avatarHtml}
+    <span>Hi, <strong>${currentUser.username}</strong></span>
+    <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button>
+  `;
 }
 function signOut() { localStorage.removeItem('oem_user'); currentUser = null; showAuth(); }
 
@@ -1379,6 +1483,18 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'profile') renderProfileTab();
+}
+function switchTabByName(name) {
+  const btns = document.querySelectorAll('.tab-btn');
+  const panes = ['submit','all','profile'];
+  const idx = panes.indexOf(name);
+  if (idx === -1) return;
+  btns.forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  btns[idx].classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'profile') renderProfileTab();
 }
 
 // ── Text-to-speech ────────────────────────────────────────────────────
@@ -1457,6 +1573,151 @@ async function speakExpressionById(subId, btn) {
     btn.classList.remove('speaking');
     if (activeTtsBtn === btn) activeTtsBtn = null;
   };
+}
+
+// ── Profile tab ───────────────────────────────────────────────────────
+function renderProfileTab() {
+  if (!currentUser) return;
+
+  // Populate fields
+  document.getElementById('profile-username').value = currentUser.username;
+  document.getElementById('profile-email').value    = currentUser.email || '';
+  document.getElementById('profile-info-msg').textContent = '';
+
+  // Avatar
+  const avatarUrl = getAvatarDataUrl();
+  const initials  = currentUser.username.slice(0,2).toUpperCase();
+  document.getElementById('profile-avatar-initials').textContent = initials;
+  const imgEl = document.getElementById('profile-avatar-img');
+  const removeBtn = document.getElementById('remove-avatar-btn');
+  if (avatarUrl) {
+    imgEl.src = avatarUrl;
+    imgEl.style.display = '';
+    removeBtn.style.display = '';
+  } else {
+    imgEl.style.display = 'none';
+    removeBtn.style.display = 'none';
+  }
+
+  // Stats
+  const mine = allSubmissions.filter(s => s.userId === currentUser._id);
+  const filled = mine.filter(s => s.expression);
+  const monthsActive = new Set(filled.map(s => s.month)).size;
+  const joinDate = currentUser.createdAt
+    ? new Date(currentUser.createdAt).toLocaleDateString('en-US', {month:'long', year:'numeric'})
+    : '—';
+  document.getElementById('profile-stats').innerHTML = `
+    <div class="profile-stat">
+      <div class="profile-stat-num">${filled.length}</div>
+      <div class="profile-stat-label">Expressions submitted<br><span style="font-size:.75rem;color:var(--ink-faint)">across ${monthsActive} month${monthsActive!==1?'s':''}</span></div>
+    </div>
+    <div class="profile-stat">
+      <div class="profile-stat-num">${monthsActive}</div>
+      <div class="profile-stat-label">Active months</div>
+    </div>
+    <div class="profile-stat">
+      <div class="profile-stat-num" style="font-size:1rem;padding-top:4px">${joinDate}</div>
+      <div class="profile-stat-label">Member since</div>
+    </div>
+  `;
+}
+
+async function saveProfileInfo() {
+  const username = document.getElementById('profile-username').value.trim();
+  const email    = document.getElementById('profile-email').value.trim();
+  const msgEl    = document.getElementById('profile-info-msg');
+  msgEl.textContent = '';
+  msgEl.className = '';
+
+  if (!username || !email) { msgEl.textContent = 'Username and email are required.'; msgEl.className = 'error-msg'; return; }
+
+  try {
+    const r = await fetch(API_BASE + '/api/users/' + currentUser._id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email })
+    });
+    const data = await r.json();
+    if (!r.ok) { msgEl.textContent = data.error || 'Could not save.'; msgEl.className = 'error-msg'; return; }
+
+    // Update local state
+    currentUser.username = data.username;
+    currentUser.email    = data.email;
+    localStorage.setItem('oem_user', JSON.stringify(currentUser));
+    refreshHeaderAvatar();
+    renderProfileTab();
+    await loadAll();
+    renderMySubmissions();
+    msgEl.textContent = '✓ Saved!';
+    msgEl.className = 'success-msg';
+    setTimeout(() => { msgEl.textContent = ''; }, 2500);
+  } catch(e) {
+    msgEl.textContent = 'Could not reach server.';
+    msgEl.className = 'error-msg';
+  }
+}
+
+// ── Avatar handling (stored locally as base64) ────────────────────────
+function triggerAvatarUpload() {
+  document.getElementById('avatar-file-input').click();
+}
+
+function handleAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) { showToast('Image too large — pick one under 4MB', 'error'); return; }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    // Resize to max 200×200 before storing
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 200;
+      const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+      canvas.width  = Math.round(img.width  * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      localStorage.setItem('oem_avatar_' + currentUser._id, dataUrl);
+      refreshHeaderAvatar();
+      renderProfileTab();
+      showToast('✓ Profile picture updated', 'success');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  // Reset so same file can be re-selected
+  event.target.value = '';
+}
+
+function removeAvatar() {
+  if (!confirm('Remove your profile picture?')) return;
+  localStorage.removeItem('oem_avatar_' + currentUser._id);
+  refreshHeaderAvatar();
+  renderProfileTab();
+  showToast('Profile picture removed', 'success');
+}
+
+// ── Delete account ────────────────────────────────────────────────────
+async function confirmDeleteAccount() {
+  const answer = prompt(
+    `This will permanently delete your account and ALL your submissions.\n\nType your username (${currentUser.username}) to confirm:`
+  );
+  if (answer === null) return; // cancelled
+  if (answer.trim() !== currentUser.username) {
+    showToast('Username did not match — account not deleted', 'error');
+    return;
+  }
+  try {
+    const r = await fetch(API_BASE + '/api/users/' + currentUser._id, { method: 'DELETE' });
+    if (!r.ok) { showToast('Could not delete account. Try again.', 'error'); return; }
+    localStorage.removeItem('oem_avatar_' + currentUser._id);
+    signOut();
+    showToast('Account deleted. Goodbye 👋', 'success');
+  } catch(e) {
+    showToast('Could not reach server.', 'error');
+  }
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────

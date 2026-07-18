@@ -728,8 +728,12 @@ async function loadAll() {
     const r = await fetch(API_BASE + '/api/submissions');
     allSubmissions = await r.json();
   } catch(e) { allSubmissions = []; }
-  const months = [...new Set(allSubmissions.map(s => s.month))].sort().reverse();
-  selectedMonth = selectedMonth || months[0] || currentMonthStr();
+  // Sort ascending (Jan→Dec) — renderMonthNav picks the most recent as default
+  const months = [...new Set(allSubmissions.map(s => s.month))].sort();
+  if (!selectedMonth) {
+    // Default to the most recent month overall
+    selectedMonth = months[months.length - 1] || currentMonthStr();
+  }
   renderMonthNav(months);
   renderAllGrid();
 }
@@ -1001,10 +1005,15 @@ function buildSidebarOrYearNav() { /* no-op in tab layout, kept for compatibilit
 
 function renderMonthNav(months) {
   const curYear = String(new Date().getFullYear());
+  // Years newest→oldest in the year pill row (most recent year on the left)
   const years = [...new Set(months.map(m => m.split('-')[0]))].sort().reverse();
   if (!selectedYear) selectedYear = years.includes(curYear) ? curYear : years[0];
-  const yearMonths = months.filter(m => m.split('-')[0] === selectedYear);
-  if (yearMonths.length && !yearMonths.includes(selectedMonth)) selectedMonth = yearMonths[0];
+  // Month buttons oldest→newest (Jan…Dec left-to-right)
+  const yearMonths = months.filter(m => m.split('-')[0] === selectedYear).sort();
+  // Default to the most recent month in that year (rightmost)
+  if (yearMonths.length && !yearMonths.includes(selectedMonth)) {
+    selectedMonth = yearMonths[yearMonths.length - 1];
+  }
 
   const yearTabsHtml = years.map(y =>
     `<button class="year-tab-btn ${y === selectedYear ? 'active' : ''}" onclick="selectYear('${y}')">${y}</button>`
@@ -1024,9 +1033,10 @@ function renderMonthNav(months) {
 
 function selectYear(y) {
   selectedYear = y;
-  const months = [...new Set(allSubmissions.map(s => s.month))].sort().reverse();
+  const months = [...new Set(allSubmissions.map(s => s.month))].sort();
   const yearMonths = months.filter(m => m.split('-')[0] === y);
-  selectedMonth = yearMonths[0] || selectedMonth;
+  // Default to most recent month in selected year
+  selectedMonth = yearMonths[yearMonths.length - 1] || selectedMonth;
   renderMonthNav(months);
   renderAllGrid();
 }
@@ -1034,7 +1044,7 @@ function selectYear(y) {
 function selectMonth(m) {
   selectedMonth = m;
   selectedYear = m.split('-')[0];
-  renderMonthNav([...new Set(allSubmissions.map(s => s.month))].sort().reverse());
+  renderMonthNav([...new Set(allSubmissions.map(s => s.month))].sort());
   renderAllGrid();
 }
 

@@ -174,9 +174,77 @@
   .stat-num { font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 900; color: var(--accent); line-height: 1; }
   .stat-label { font-size: 0.75rem; color: var(--ink-soft); line-height: 1.3; }
 
+  /* ── Pending chip with hover tooltip ───────────────────── */
+  .pending-chip-wrap { position: relative; display: inline-flex; }
+  .pending-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--rule);
+    border-radius: var(--radius-sm); padding: 10px 16px;
+    box-shadow: var(--shadow-sm); cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    font-family: inherit;
+  }
+  .pending-chip:hover { border-color: var(--gold); box-shadow: 0 2px 12px rgba(217,119,6,.18); }
+  .pending-chip-num { font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 900; color: var(--gold); line-height: 1; }
+  .pending-chip-label { font-size: 0.75rem; color: var(--ink-soft); line-height: 1.3; }
+
+  .pending-hover-card {
+    position: absolute; top: calc(100% + 10px); left: 0;
+    background: var(--card); border: 1px solid var(--rule);
+    border-radius: var(--radius); box-shadow: var(--shadow-md);
+    padding: 14px 18px; min-width: 210px; z-index: 50;
+    opacity: 0; pointer-events: none; transform: translateY(-6px);
+    transition: opacity .18s, transform .18s;
+  }
+  .pending-chip-wrap:hover .pending-hover-card {
+    opacity: 1; pointer-events: all; transform: translateY(0);
+  }
+  .pending-hover-title { font-size: 0.7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
+  .pending-hover-user {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 6px 0;
+    border-bottom: 1px solid var(--rule); cursor: pointer;
+    border-radius: 4px; transition: background .1s;
+  }
+  .pending-hover-user:last-child { border-bottom: none; }
+  .pending-hover-user:hover { background: var(--card2); padding-left: 6px; padding-right: 6px; margin: 0 -6px; }
+  .pending-hover-name { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+  .pending-hover-count { font-size: 0.75rem; color: var(--ink-soft); background: var(--card2); border: 1px solid var(--rule); border-radius: 20px; padding: 2px 8px; white-space: nowrap; }
+
+  /* ── Pending detail modal ──────────────────────────────── */
+  .pending-user-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
+  .pending-user-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .pending-user-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .pending-user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .pending-user-name { font-size: 0.95rem; font-weight: 700; color: var(--ink); }
+  .pending-month-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--rule); }
+  .pending-month-row:last-child { border-bottom: none; }
+  .pending-month-label { font-size: 0.82rem; color: var(--ink-soft); }
+  .pending-remind-all-bar { margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--rule); }
+
   /* Spinner */
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Page loading screen ─────────────────────────────────── */
+  #page-loader {
+    position: fixed; inset: 0; background: var(--page);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 999; gap: 18px;
+    transition: opacity .35s ease;
+  }
+  #page-loader.hidden { opacity: 0; pointer-events: none; }
+  .loader-logo {
+    font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 900; letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .loader-ring {
+    width: 36px; height: 36px;
+    border: 3px solid var(--rule); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  .loader-msg { font-size: 0.8rem; color: var(--ink-faint); letter-spacing: .05em; }
 
   /* Modal overlay */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity .2s; pointer-events: none; }
@@ -293,6 +361,13 @@
 </style>
 </head>
 <body>
+<!-- Page loader -->
+<div id="page-loader">
+  <div class="loader-logo">OneEachMonth</div>
+  <div class="loader-ring"></div>
+  <div class="loader-msg">Loading…</div>
+</div>
+
 <div id="app">
   <header>
     <div class="logo-wrap">
@@ -355,7 +430,7 @@
           <div class="section-title">My Submissions <span class="badge" id="my-status-badge"></span></div>
         </div>
         <div class="section-actions">
-          <div class="tooltip-wrap"><button class="btn btn-accent2 btn-sm" onclick="openNewSubmission()">✨ New submission</button><div class="tooltip-box">You can pick any month inside</div></div>
+          <button class="btn btn-accent2 btn-sm" onclick="openNewSubmission()">✨ New submission</button>
         </div>
       </div>
       <div id="my-submissions-list"></div>
@@ -416,12 +491,8 @@
       <button class="modal-close" onclick="closeModal('new-sub-modal')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label>Month</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="flex:1;font-size:.92rem;font-weight:600;color:var(--ink)" id="ns-month-display"></div>
-          <button class="btn btn-outline btn-xs" onclick="openMonthPickerFromModal()">Change</button>
-        </div>
+      <div style="font-size:0.8rem;color:var(--ink-faint);margin-bottom:16px;display:flex;align-items:center;gap:6px">
+        📅 <span id="ns-month-display" style="font-weight:600;color:var(--ink-soft)"></span>
       </div>
       <div class="form-group">
         <label>Expression</label>
@@ -457,6 +528,28 @@
         <button onclick="changePickerYear(1)">Next →</button>
       </div>
       <div class="month-picker-grid" id="month-picker-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Pending users detail modal -->
+<div class="modal-overlay" id="pending-modal" onclick="closeModalOnBg(event,'pending-modal')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700">⏳ Pending submissions</div>
+        <div style="font-size:0.82rem;color:var(--ink-soft);margin-top:3px" id="pending-modal-subtitle"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('pending-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="pending-modal-body"></div>
+      <div class="pending-remind-all-bar">
+        <button class="btn btn-accent2" style="width:100%;justify-content:center" onclick="sendRemindAll()">
+          📣 Remind everyone pending
+        </button>
+        <div style="font-size:0.75rem;color:var(--ink-faint);margin-top:8px;text-align:center">Sends a single reminder email to each person listed above</div>
+      </div>
     </div>
   </div>
 </div>
@@ -560,7 +653,15 @@ initTheme();
 })();
 
 // ── Auth ──────────────────────────────────────────────────────────────
+function hideLoader() {
+  const loader = document.getElementById('page-loader');
+  if (!loader) return;
+  loader.classList.add('hidden');
+  setTimeout(() => loader.remove(), 400);
+}
+
 function showAuth() {
+  hideLoader();
   document.getElementById('auth-panel').style.display = '';
   document.getElementById('main-panel').style.display = 'none';
   document.getElementById('user-greeting').innerHTML = '';
@@ -606,8 +707,6 @@ async function submitAuth() {
 
 // ── Main ──────────────────────────────────────────────────────────────
 async function showMain() {
-  document.getElementById('auth-panel').style.display = 'none';
-  document.getElementById('main-panel').style.display = '';
   const initials = currentUser.username.slice(0,2).toUpperCase();
   document.getElementById('user-greeting').innerHTML = `
     <div class="avatar">${initials}</div>
@@ -617,6 +716,9 @@ async function showMain() {
   await fetch(API_BASE + '/api/ensure-slots', { method:'POST' }).catch(()=>{});
   await loadAll();
   renderMySubmissions();
+  hideLoader();
+  document.getElementById('auth-panel').style.display = 'none';
+  document.getElementById('main-panel').style.display = '';
 }
 function signOut() { localStorage.removeItem('oem_user'); currentUser = null; showAuth(); }
 
@@ -762,8 +864,9 @@ function pickMyMonth(m) {
 }
 
 // ── New Submission modal ──────────────────────────────────────────────
-function openNewSubmission(month) {
-  pendingMonth = month || currentMonthStr();
+function openNewSubmission() {
+  // Always submit to the currently viewed month
+  pendingMonth = myViewMonth;
   document.getElementById('new-sub-title').textContent = 'New Expression';
   document.getElementById('new-sub-subtitle').textContent = '';
   document.getElementById('ns-month-display').textContent = formatMonth(pendingMonth);
@@ -773,15 +876,6 @@ function openNewSubmission(month) {
   document.getElementById('ns-error').textContent = '';
   document.getElementById('new-sub-modal').dataset.editId = '';
   openModal('new-sub-modal');
-}
-
-function openMonthPickerFromModal() {
-  monthPickerMode = 'new-sub';
-  closeModal('new-sub-modal');
-  pickerYear = new Date().getFullYear();
-  document.getElementById('month-modal-title').textContent = 'Pick a month';
-  renderMonthPickerGrid();
-  openModal('month-modal');
 }
 
 async function saveNewSubmission() {
@@ -945,14 +1039,62 @@ function selectMonth(m) {
 }
 
 function renderAllGrid() {
-  const forMonth = allSubmissions.filter(s => s.month === selectedMonth);
-  const filled   = forMonth.filter(s => s.expression).length;
+  // Sort by username alphabetically; submitted first, then pending — stable within each group
+  const forMonth = allSubmissions
+    .filter(s => s.month === selectedMonth)
+    .slice()
+    .sort((a, b) => {
+      const aFilled = !!a.expression;
+      const bFilled = !!b.expression;
+      if (aFilled !== bFilled) return aFilled ? -1 : 1; // submitted first
+      return a.username.localeCompare(b.username, 'en', { sensitivity: 'base' });
+    });
+
+  const filled  = forMonth.filter(s => s.expression).length;
+  const pending = forMonth.filter(s => !s.expression);
+
   document.getElementById('all-count-badge').textContent = `${filled} / ${forMonth.length} submitted`;
+
+  // Build pending hover card rows
+  const pendingUserMap = {};
+  pending.forEach(s => {
+    if (!pendingUserMap[s.username]) pendingUserMap[s.username] = { username: s.username, months: [] };
+    pendingUserMap[s.username].months.push(s.month);
+  });
+  const pendingUsers = Object.values(pendingUserMap).sort((a,b) => a.username.localeCompare(b.username));
+
+  const hoverRows = pendingUsers.map(u =>
+    `<div class="pending-hover-user" onclick="event.stopPropagation();openPendingModal()">
+      <span class="pending-hover-name">${escHtml(u.username)}</span>
+      <span class="pending-hover-count">${u.months.length} missing</span>
+    </div>`
+  ).join('');
+
+  const noPendingMsg = pending.length === 0
+    ? `<div style="font-size:.82rem;color:var(--success);font-weight:600">🎉 Everyone submitted!</div>`
+    : '';
+
   document.getElementById('stats-row').innerHTML = `
-    <div class="stat-chip"><div><div class="stat-num">${filled}</div><div class="stat-label">Submitted</div></div></div>
-    <div class="stat-chip"><div><div class="stat-num">${forMonth.length - filled}</div><div class="stat-label">Pending</div></div></div>
-    <div class="stat-chip"><div><div class="stat-num">${forMonth.length}</div><div class="stat-label">Members</div></div></div>
+    <div class="pending-chip-wrap">
+      <button class="pending-chip" onclick="openPendingModal()">
+        <div>
+          <div class="pending-chip-num">${pending.length}</div>
+          <div class="pending-chip-label">Pending</div>
+        </div>
+      </button>
+      ${pending.length > 0 ? `
+      <div class="pending-hover-card">
+        <div class="pending-hover-title">Who's still missing</div>
+        ${hoverRows}
+        <div style="margin-top:10px;font-size:.72rem;color:var(--accent);font-weight:600;cursor:pointer" onclick="openPendingModal()">Click for details & reminders →</div>
+      </div>` : `
+      <div class="pending-hover-card">
+        <div class="pending-hover-title">Status</div>
+        ${noPendingMsg}
+      </div>`}
+    </div>
   `;
+
   const grid = document.getElementById('all-submissions');
   if (!forMonth.length) { grid.innerHTML = '<p style="color:var(--ink-soft);font-size:.9rem">No data for this month yet.</p>'; return; }
   grid.innerHTML = forMonth.map(s => {
@@ -972,6 +1114,106 @@ function renderAllGrid() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ── Pending modal ─────────────────────────────────────────────────────
+function openPendingModal() {
+  // Gather ALL pending submissions across all months, grouped by user
+  const allPending = allSubmissions.filter(s => !s.expression);
+  const byUser = {};
+  allPending.forEach(s => {
+    if (!byUser[s.username]) byUser[s.username] = { username: s.username, userId: s.userId, months: [] };
+    byUser[s.username].months.push(s.month);
+  });
+  const users = Object.values(byUser).sort((a,b) => a.username.localeCompare(b.username));
+
+  document.getElementById('pending-modal-subtitle').textContent =
+    `${allPending.length} submission${allPending.length !== 1 ? 's' : ''} missing across ${users.length} member${users.length !== 1 ? 's' : ''}`;
+
+  if (!users.length) {
+    document.getElementById('pending-modal-body').innerHTML =
+      `<div style="text-align:center;padding:24px 0;font-size:.95rem;color:var(--success)">🎉 Everyone is up to date!</div>`;
+    document.querySelector('.pending-remind-all-bar').style.display = 'none';
+    openModal('pending-modal');
+    return;
+  }
+
+  document.querySelector('.pending-remind-all-bar').style.display = '';
+
+  document.getElementById('pending-modal-body').innerHTML = users.map(u => {
+    const initials = u.username.slice(0,2).toUpperCase();
+    const monthRows = u.months
+      .slice().sort()
+      .map(m => `
+        <div class="pending-month-row">
+          <span class="pending-month-label">${formatMonth(m)}</span>
+          <button class="btn btn-outline btn-xs" onclick="sendReminderToUser('${escHtml(u.username)}', '${m}', this)">
+            📧 Remind
+          </button>
+        </div>`).join('');
+    return `
+      <div class="pending-user-section">
+        <div class="pending-user-header">
+          <div class="pending-user-avatar">${initials}</div>
+          <div>
+            <div class="pending-user-name">${escHtml(u.username)}</div>
+            <div style="font-size:.72rem;color:var(--ink-faint)">${u.months.length} month${u.months.length !== 1 ? 's' : ''} missing</div>
+          </div>
+        </div>
+        ${monthRows}
+      </div>`;
+  }).join('');
+
+  openModal('pending-modal');
+}
+
+async function sendReminderToUser(username, month, btn) {
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const r = await fetch(API_BASE + '/api/send-reminders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUsername: username, targetMonth: month })
+    });
+    if (r.ok) {
+      btn.innerHTML = '✓ Sent';
+      btn.style.color = 'var(--success)';
+      btn.style.borderColor = 'var(--success)';
+    } else {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      showToast('Could not send reminder', 'error');
+    }
+  } catch(e) {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+    showToast('Could not send reminder', 'error');
+  }
+}
+
+async function sendRemindAll() {
+  const btn = document.querySelector('.pending-remind-all-bar .btn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Sending…';
+  try {
+    const r = await fetch(API_BASE + '/api/send-reminders', { method: 'POST' });
+    if (r.ok) {
+      btn.innerHTML = '✓ Reminders sent!';
+      btn.style.opacity = '.7';
+      showToast('Reminders sent to everyone pending', 'success');
+    } else {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      showToast('Could not send reminders', 'error');
+    }
+  } catch(e) {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+    showToast('Could not send reminders', 'error');
+  }
 }
 
 // ── Card modal ────────────────────────────────────────────────────────

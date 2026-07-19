@@ -532,6 +532,9 @@
       <div style="font-size:0.8rem;color:var(--ink-faint);margin-bottom:16px;display:flex;align-items:center;gap:6px">
         📅 <span id="ns-month-display" style="font-weight:600;color:var(--ink-soft)"></span>
       </div>
+      <div id="ns-future-notice" style="display:none;background:var(--gold-bg);border:1px solid var(--gold);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-size:0.82rem;color:var(--gold);line-height:1.5">
+        🔮 <strong>Heads up:</strong> this is a future month. Your expression will be saved but <strong>won't appear in All Expressions</strong> until that month arrives.
+      </div>
       <div class="form-group">
         <label>Expression</label>
         <input id="ns-expr" type="text" placeholder='Type your expression…' />
@@ -840,10 +843,14 @@ async function loadAll() {
     allSubmissions = await r.json();
   } catch(e) { allSubmissions = []; }
   // Sort ascending (Jan→Dec) — renderMonthNav picks the most recent as default
-  const months = [...new Set(allSubmissions.map(s => s.month))].sort();
-  if (!selectedMonth) {
-    // Default to the most recent month overall
-    selectedMonth = months[months.length - 1] || currentMonthStr();
+  // Future months are excluded from the All Expressions view
+  const thisMonth = currentMonthStr();
+  const months = [...new Set(allSubmissions.map(s => s.month))]
+    .filter(m => m <= thisMonth)
+    .sort();
+  if (!selectedMonth || selectedMonth > thisMonth) {
+    // Default to the most recent non-future month
+    selectedMonth = months[months.length - 1] || thisMonth;
   }
   renderMonthNav(months);
   renderAllGrid();
@@ -879,6 +886,10 @@ function renderMySubmissions() {
 
   if (filled.length === 0) {
     list.innerHTML = `
+      ${myViewMonth > currentMonthStr() ? `
+      <div style="background:var(--gold-bg);border:1px solid var(--gold);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:var(--gold);line-height:1.5">
+        🔮 <strong>Future month.</strong> Submissions here won't appear in All Expressions until ${formatMonth(myViewMonth)}.
+      </div>` : ''}
       <div class="my-sub-card" style="text-align:center;padding:40px 28px;color:var(--ink-soft)">
         <div style="font-size:2rem;margin-bottom:10px">📝</div>
         <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:8px">Nothing for ${formatMonth(myViewMonth)}!</div>
@@ -887,7 +898,13 @@ function renderMySubmissions() {
     return;
   }
 
-  list.innerHTML = filled.map(s => renderMySubCard(s)).join('');
+  list.innerHTML = `
+    ${myViewMonth > currentMonthStr() ? `
+    <div style="background:var(--gold-bg);border:1px solid var(--gold);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:var(--gold);line-height:1.5">
+      🔮 <strong>Future month.</strong> These submissions won't appear in All Expressions until ${formatMonth(myViewMonth)}.
+    </div>` : ''}
+    ${filled.map(s => renderMySubCard(s)).join('')}
+  `;
 }
 
 function renderMySubCard(s) {
@@ -990,6 +1007,9 @@ function openNewSubmission() {
   document.getElementById('ns-comment').value = '';
   document.getElementById('ns-error').textContent = '';
   document.getElementById('new-sub-modal').dataset.editId = '';
+  // Show notice if submitting for a future month
+  const isFuture = pendingMonth > currentMonthStr();
+  document.getElementById('ns-future-notice').style.display = isFuture ? '' : 'none';
   openModal('new-sub-modal');
 }
 
@@ -1144,7 +1164,10 @@ function renderMonthNav(months) {
 
 function selectYear(y) {
   selectedYear = y;
-  const months = [...new Set(allSubmissions.map(s => s.month))].sort();
+  const thisMonth = currentMonthStr();
+  const months = [...new Set(allSubmissions.map(s => s.month))]
+    .filter(m => m <= thisMonth)
+    .sort();
   const yearMonths = months.filter(m => m.split('-')[0] === y);
   // Default to most recent month in selected year
   selectedMonth = yearMonths[yearMonths.length - 1] || selectedMonth;
@@ -1155,7 +1178,11 @@ function selectYear(y) {
 function selectMonth(m) {
   selectedMonth = m;
   selectedYear = m.split('-')[0];
-  renderMonthNav([...new Set(allSubmissions.map(s => s.month))].sort());
+  const thisMonth = currentMonthStr();
+  const months = [...new Set(allSubmissions.map(s => s.month))]
+    .filter(m => m <= thisMonth)
+    .sort();
+  renderMonthNav(months);
   renderAllGrid();
 }
 

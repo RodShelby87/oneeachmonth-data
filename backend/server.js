@@ -405,6 +405,35 @@ app.post('/api/comments', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Test email (debug only) ───────────────────────────────────────────
+// GET /api/test-email  → sends a test email to GMAIL_USER itself and returns the error if any
+app.get('/api/test-email', async (req, res) => {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) {
+    return res.status(500).json({ error: 'GMAIL_USER or GMAIL_APP_PASSWORD not set', user: user || '(missing)', passLength: pass ? pass.length : 0 });
+  }
+  const transporter = require('nodemailer').createTransport({
+    service: 'gmail',
+    auth: { user, pass },
+    connectionTimeout: 8000,
+    greetingTimeout:   8000,
+    socketTimeout:     10000,
+  });
+  try {
+    await transporter.verify();
+    await transporter.sendMail({
+      from:    `"OneEachMonth Test" <${user}>`,
+      to:      user,
+      subject: 'OneEachMonth — SMTP test ✓',
+      text:    'If you got this, email is working correctly.',
+    });
+    res.json({ ok: true, sentTo: user });
+  } catch(err) {
+    res.status(500).json({ ok: false, error: err.message, code: err.code, command: err.command });
+  }
+});
+
 // ── Reminders ─────────────────────────────────────────────────────────
 // POST /api/send-reminders
 //   body {}                              → remind all users with ANY pending month

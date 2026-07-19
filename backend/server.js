@@ -9,7 +9,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '2mb' })); // allow slightly larger payloads
+app.use(express.json({ limit: '2mb' }));
 
 mongoose.connect(process.env.MONGODB_URI);
 
@@ -64,69 +64,153 @@ async function syncToGitHub(data) {
   } catch(err) { console.error('GitHub sync failed:', err.message); }
 }
 
-// ── Email (Nodemailer via Gmail) ─────────────────────────────────────
+// ── Email helpers ─────────────────────────────────────────────────────
 function createTransporter() {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return null;
   return nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
+    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+    // Fail fast instead of hanging Render's request for 30s
+    connectionTimeout: 8000,
+    greetingTimeout:   8000,
+    socketTimeout:     10000,
   });
 }
 
-async function sendReminderEmails() {
-  const transporter = createTransporter();
-  if (!transporter) { console.log('Email not configured — skipping reminders.'); return; }
+// "2026-07" → "July 2026"
+function formatMonth(m) {
+  const [y, mo] = m.split('-');
+  return new Date(+y, +mo - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
 
-  const now = new Date();
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    .toISOString().slice(0, 7);
+function reminderHtml(username, month, appUrl) {
+  const monthLabel = formatMonth(month);
+  return `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fffbf5;border-radius:12px">
+      <h1 style="font-size:1.5rem;margin-bottom:8px;color:#1c1917">
+        Your monthly expression is still missing, lazy ass 😤
+      </h1>
+      <p style="color:#57534e;font-size:1rem;line-height:1.6;margin-bottom:24px">
+        Hey <strong>${username}</strong>, you didn't submit anything for <strong>${monthLabel}</strong>.<br>
+        It only takes a minute — go find something good!
+      </p>
+      <a href="${appUrl}" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-weight:700;font-size:1rem;padding:14px 28px;border-radius:8px;text-decoration:none">
+        Submit it here →
+      </a>
+      <p style="color:#a8a29e;font-size:0.8rem;margin-top:32px">— OneEachMonth</p>
+    </div>
+  `;
+}
+
+// Send a reminder to ONE specific user for ONE specific month.
+// Returns { ok: true } or throws.
+async function sendSingleReminder(user, month) {
+  const transporter = createTransporter();
+  if (!transporter) throw new Error('Email not configured (check GMAIL_USER and GMAIL_APP_PASSWORD)');
 
   const appUrl = process.env.APP_URL || 'https://oneeachmonth.onrender.com';
-  const users = await User.find();
-  let sent = 0;
+  const monthLabel = formatMonth(month);
 
-  for (const user of users) {
-    const sub = await Submission.findOne({
-      userId: user._id,
-      month: prevMonth,
-      expression: { $ne: '' }
-    });
-    if (sub) continue;
+  await transporter.sendMail({
+    from:    `"OneEachMonth" <${process.env.GMAIL_USER}>`,
+    to:      user.email,
+    subject: `Hey ${user.username}, your expression for ${monthLabel} is missing 👀`,
+    html:    reminderHtml(user.username, month, appUrl),
+  });
+
+  console.log(`Reminder sent → ${user.email} (${month})`);
+  return { ok: true };
+}
+
+// Send reminders to ALL users who have ANY pending (empty) submission.
+// Used by the "Remind everyone" button and the monthly cron.
+// When calledByMonth is set (cron use), only checks that month.
+async function sendAllPendingReminders(calledByMonth = null) {
+  const transporter = createTransporter();
+  if (!transporter) {
+    console.log('Email not configured — skipping reminders.');
+    return { sent: 0, skipped: 0, errors: 0 };
+  }
+
+  const appUrl = process.env.APP_URL || 'https://oneeachmonth.onrender.com';
+
+  // Find all empty submission slots
+  const query = calledByMonth
+    ? { expression: '', month: calledByMonth }
+    : { expression: '' };
+
+  const pendingSlots = await Submission.find(query).lean();
+  if (!pendingSlots.length) {
+    console.log('No pending submissions — nothing to send.');
+    return { sent: 0, skipped: 0, errors: 0 };
+  }
+
+  // Group by userId so we send ONE email per user listing ALL their missing months
+  const byUser = {};
+  for (const slot of pendingSlots) {
+    const key = String(slot.userId);
+    if (!byUser[key]) byUser[key] = { userId: slot.userId, username: slot.username, months: [] };
+    byUser[key].months.push(slot.month);
+  }
+
+  let sent = 0, skipped = 0, errors = 0;
+
+  for (const entry of Object.values(byUser)) {
+    const user = await User.findById(entry.userId).lean();
+    if (!user) { skipped++; continue; }
+
+    entry.months.sort();
+    const monthLines = entry.months
+      .map(m => `<li style="margin-bottom:4px">${formatMonth(m)}</li>`)
+      .join('');
+
+    const subjectMonths = entry.months.length === 1
+      ? formatMonth(entry.months[0])
+      : `${entry.months.length} months`;
 
     try {
       await transporter.sendMail({
-        from: `"OneEachMonth" <${process.env.GMAIL_USER}>`,
-        to: user.email,
-        subject: `Hey ${user.username}, your expression for last month is missing 👀`,
+        from:    `"OneEachMonth" <${process.env.GMAIL_USER}>`,
+        to:      user.email,
+        subject: `Hey ${user.username}, you're missing expressions for ${subjectMonths} 👀`,
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fffbf5;border-radius:12px">
             <h1 style="font-size:1.5rem;margin-bottom:8px;color:#1c1917">
-              Your monthly expression is still missing, lazy ass 😤
+              Still missing some expressions, lazy ass 😤
             </h1>
-            <p style="color:#57534e;font-size:1rem;line-height:1.6;margin-bottom:24px">
-              You didn't submit anything for <strong>${prevMonth}</strong>.<br>
-              It only takes a minute — go find something good!
+            <p style="color:#57534e;font-size:1rem;line-height:1.6;margin-bottom:16px">
+              Hey <strong>${user.username}</strong>, you haven't submitted for:
             </p>
+            <ul style="color:#57534e;font-size:1rem;line-height:1.8;margin-bottom:24px;padding-left:20px">
+              ${monthLines}
+            </ul>
             <a href="${appUrl}" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-weight:700;font-size:1rem;padding:14px 28px;border-radius:8px;text-decoration:none">
-              Submit it here →
+              Submit now →
             </a>
             <p style="color:#a8a29e;font-size:0.8rem;margin-top:32px">— OneEachMonth</p>
           </div>
-        `
+        `,
       });
       sent++;
-      console.log(`Reminder sent to ${user.email}`);
+      console.log(`Reminder sent → ${user.email} (${entry.months.join(', ')})`);
     } catch(err) {
+      errors++;
       console.error(`Failed to send to ${user.email}:`, err.message);
     }
   }
-  console.log(`Monthly reminders done. Sent: ${sent}/${users.length}`);
+
+  console.log(`Reminders done. sent=${sent} skipped=${skipped} errors=${errors}`);
+  return { sent, skipped, errors };
 }
 
 // ── Cron: 1st of every month at 9:00am UTC ──────────────────────────
-cron.schedule('0 9 1 * *', () => {
+// Reminds everyone who didn't submit for the month that just ended.
+cron.schedule('0 9 1 * *', async () => {
   console.log('Running monthly reminder cron...');
-  sendReminderEmails();
+  const now = new Date();
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    .toISOString().slice(0, 7);
+  await sendAllPendingReminders(prevMonth);
 });
 
 // ── Auth ─────────────────────────────────────────────────────────────
@@ -166,33 +250,18 @@ app.put('/api/users/:id', async (req, res) => {
   try {
     const { username, email } = req.body;
     if (!username || !email) return res.status(400).json({ error: 'Username and email required' });
-
-    // Check uniqueness against OTHER users
-    const existing = await User.findOne({
-      $or: [{ username }, { email }],
-      _id: { $ne: req.params.id }
-    });
+    const existing = await User.findOne({ $or: [{ username }, { email }], _id: { $ne: req.params.id } });
     if (existing) {
       const field = existing.username === username ? 'username' : 'email';
       return res.status(400).json({ error: `That ${field} is already taken` });
     }
-
-    // Get old username before update (needed for comment cascade)
     const oldUser = await User.findById(req.params.id);
     if (!oldUser) return res.status(404).json({ error: 'User not found' });
-
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { username, email },
-      { new: true }
-    );
-
-    // Cascade username change to submissions and comments
+    const user = await User.findByIdAndUpdate(req.params.id, { username, email }, { new: true });
     await Submission.updateMany({ userId: req.params.id }, { username });
     if (oldUser.username !== username) {
       await Comment.updateMany({ username: oldUser.username }, { username });
     }
-
     res.json({ _id: user._id, username: user.username, email: user.email, createdAt: user.createdAt });
   } catch(err) {
     if (err.code === 11000) {
@@ -208,17 +277,10 @@ app.delete('/api/users/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-
-    // Delete all their submissions (and comments on those submissions)
     const subs = await Submission.find({ userId: req.params.id });
-    for (const sub of subs) {
-      await Comment.deleteMany({ subId: sub._id });
-    }
+    for (const sub of subs) await Comment.deleteMany({ subId: sub._id });
     await Submission.deleteMany({ userId: req.params.id });
-
-    // Also delete comments they left on other people's submissions
     await Comment.deleteMany({ username: user.username });
-
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -279,16 +341,13 @@ app.post('/api/lookup-meaning', async (req, res) => {
   try {
     const { subId, expression } = req.body;
     if (!expression) return res.status(400).json({ error: 'Missing expression' });
-
     const key = process.env.MERRIAM_WEBSTER_KEY;
     if (!key) return res.status(500).json({ error: 'API key not configured' });
-
     const queries = [
       expression.toLowerCase().trim(),
       expression.toLowerCase().replace(/["""'']/g, '').trim(),
       expression.toLowerCase().split(' ').filter(w => w.length > 3)[0]
     ].filter(Boolean);
-
     let definition = '';
     for (const query of queries) {
       const url = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${encodeURIComponent(query)}?key=${key}`;
@@ -306,7 +365,6 @@ app.post('/api/lookup-meaning', async (req, res) => {
         }
       }
     }
-
     if (!definition) return res.status(404).json({ error: 'No definition found' });
     if (subId) await Submission.findByIdAndUpdate(subId, { definition });
     res.json({ definition });
@@ -347,10 +405,35 @@ app.post('/api/comments', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Manual trigger (for testing) ─────────────────────────────────────
+// ── Reminders ─────────────────────────────────────────────────────────
+// POST /api/send-reminders
+//   body {}                              → remind all users with ANY pending month
+//   body { targetUsername, targetMonth } → remind ONE user for ONE specific month
 app.post('/api/send-reminders', async (req, res) => {
-  try { await sendReminderEmails(); res.json({ ok: true }); }
-  catch(err) { res.status(500).json({ error: err.message }); }
+  try {
+    const { targetUsername, targetMonth } = req.body || {};
+
+    if (targetUsername && targetMonth) {
+      // Single targeted reminder
+      const user = await User.findOne({ username: targetUsername });
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      // Verify there really is a pending slot for this month
+      const slot = await Submission.findOne({ userId: user._id, month: targetMonth, expression: '' });
+      if (!slot) return res.status(400).json({ error: 'No pending submission found for that user/month' });
+
+      await sendSingleReminder(user, targetMonth);
+      return res.json({ ok: true, sent: 1 });
+    }
+
+    // Bulk: remind everyone with any pending submission
+    const result = await sendAllPendingReminders();
+    res.json({ ok: true, ...result });
+
+  } catch(err) {
+    console.error('send-reminders error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(process.env.PORT || 3001, () =>

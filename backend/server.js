@@ -2,7 +2,6 @@ const express    = require('express');
 const mongoose   = require('mongoose');
 const cors       = require('cors');
 const bcrypt     = require('bcryptjs');
-const nodemailer = require('nodemailer');
 const cron       = require('node-cron');
 const { Octokit } = require('@octokit/rest');
 require('dotenv').config();
@@ -65,16 +64,20 @@ async function syncToGitHub(data) {
 }
 
 // ── Email helpers ─────────────────────────────────────────────────────
-function createTransporter() {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return null;
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-    // Fail fast instead of hanging Render's request for 30s
-    connectionTimeout: 8000,
-    greetingTimeout:   8000,
-    socketTimeout:     10000,
+// ── Email via Resend HTTP API ─────────────────────────────────────────
+// Plain HTTPS on port 443 — no SMTP, no blocked ports.
+async function resendEmail({ to, subject, html }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) throw new Error('RESEND_API_KEY is not set');
+  const from = process.env.RESEND_FROM || 'OneEachMonth <onboarding@resend.dev>';
+  const res = await fetch('https://api.resend.com/emails', {
+    method:  'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ from, to, subject, html }),
   });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+  return data;
 }
 
 // "2026-07" → "July 2026"
@@ -103,41 +106,27 @@ function reminderHtml(username, month, appUrl) {
 }
 
 // Send a reminder to ONE specific user for ONE specific month.
-// Returns { ok: true } or throws.
 async function sendSingleReminder(user, month) {
-  const transporter = createTransporter();
-  if (!transporter) throw new Error('Email not configured (check GMAIL_USER and GMAIL_APP_PASSWORD)');
-
   const appUrl = process.env.APP_URL || 'https://oneeachmonth.onrender.com';
-  const monthLabel = formatMonth(month);
-
-  await transporter.sendMail({
-    from:    `"OneEachMonth" <${process.env.GMAIL_USER}>`,
+  await resendEmail({
     to:      user.email,
-    subject: `Hey ${user.username}, your expression for ${monthLabel} is missing 👀`,
+    subject: `Hey ${user.username}, your expression for ${formatMonth(month)} is missing 👀`,
     html:    reminderHtml(user.username, month, appUrl),
   });
-
   console.log(`Reminder sent → ${user.email} (${month})`);
   return { ok: true };
 }
 
 // Send reminders to ALL users who have ANY pending (empty) submission.
-// Used by the "Remind everyone" button and the monthly cron.
-// When calledByMonth is set (cron use), only checks that month.
+// When calledByMonth is set (cron use), only checks that specific month.
 async function sendAllPendingReminders(calledByMonth = null) {
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.log('Email not configured — skipping reminders.');
+  if (!process.env.RESEND_API_KEY) {
+    console.log('RESEND_API_KEY not set — skipping reminders.');
     return { sent: 0, skipped: 0, errors: 0 };
   }
 
   const appUrl = process.env.APP_URL || 'https://oneeachmonth.onrender.com';
-
-  // Find all empty submission slots
-  const query = calledByMonth
-    ? { expression: '', month: calledByMonth }
-    : { expression: '' };
+  const query  = calledByMonth ? { expression: '', month: calledByMonth } : { expression: '' };
 
   const pendingSlots = await Submission.find(query).lean();
   if (!pendingSlots.length) {
@@ -145,7 +134,7 @@ async function sendAllPendingReminders(calledByMonth = null) {
     return { sent: 0, skipped: 0, errors: 0 };
   }
 
-  // Group by userId so we send ONE email per user listing ALL their missing months
+  // Group by userId — one email per user listing ALL their missing months
   const byUser = {};
   for (const slot of pendingSlots) {
     const key = String(slot.userId);
@@ -160,24 +149,18 @@ async function sendAllPendingReminders(calledByMonth = null) {
     if (!user) { skipped++; continue; }
 
     entry.months.sort();
-    const monthLines = entry.months
-      .map(m => `<li style="margin-bottom:4px">${formatMonth(m)}</li>`)
-      .join('');
-
-    const subjectMonths = entry.months.length === 1
+    const monthLines   = entry.months.map(m => `<li style="margin-bottom:4px">${formatMonth(m)}</li>`).join('');
+    const subjectLabel = entry.months.length === 1
       ? formatMonth(entry.months[0])
       : `${entry.months.length} months`;
 
     try {
-      await transporter.sendMail({
-        from:    `"OneEachMonth" <${process.env.GMAIL_USER}>`,
+      await resendEmail({
         to:      user.email,
-        subject: `Hey ${user.username}, you're missing expressions for ${subjectMonths} 👀`,
+        subject: `Hey ${user.username}, you're missing expressions for ${subjectLabel} 👀`,
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fffbf5;border-radius:12px">
-            <h1 style="font-size:1.5rem;margin-bottom:8px;color:#1c1917">
-              Still missing some expressions, lazy ass 😤
-            </h1>
+            <h1 style="font-size:1.5rem;margin-bottom:8px;color:#1c1917">Still missing some expressions, lazy ass 😤</h1>
             <p style="color:#57534e;font-size:1rem;line-height:1.6;margin-bottom:16px">
               Hey <strong>${user.username}</strong>, you haven't submitted for:
             </p>
@@ -406,31 +389,19 @@ app.post('/api/comments', async (req, res) => {
 });
 
 // ── Test email (debug only) ───────────────────────────────────────────
-// GET /api/test-email  → sends a test email to GMAIL_USER itself and returns the error if any
+// GET /api/test-email  → sends a test email to yourself and returns any error
 app.get('/api/test-email', async (req, res) => {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
-  if (!user || !pass) {
-    return res.status(500).json({ error: 'GMAIL_USER or GMAIL_APP_PASSWORD not set', user: user || '(missing)', passLength: pass ? pass.length : 0 });
-  }
-  const transporter = require('nodemailer').createTransport({
-    service: 'gmail',
-    auth: { user, pass },
-    connectionTimeout: 8000,
-    greetingTimeout:   8000,
-    socketTimeout:     10000,
-  });
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'RESEND_API_KEY not set' });
   try {
-    await transporter.verify();
-    await transporter.sendMail({
-      from:    `"OneEachMonth Test" <${user}>`,
-      to:      user,
-      subject: 'OneEachMonth — SMTP test ✓',
-      text:    'If you got this, email is working correctly.',
+    const data = await resendEmail({
+      to:      process.env.GMAIL_USER || 'delivered@resend.dev',
+      subject: 'OneEachMonth — email test ✓',
+      html:    '<p>If you got this, Resend is working correctly.</p>',
     });
-    res.json({ ok: true, sentTo: user });
+    res.json({ ok: true, data });
   } catch(err) {
-    res.status(500).json({ ok: false, error: err.message, code: err.code, command: err.command });
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 

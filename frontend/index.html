@@ -1325,19 +1325,27 @@ async function sendReminderToUser(username, month, btn) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetUsername: username, targetMonth: month })
     });
+    const data = await r.json().catch(() => ({}));
     if (r.ok) {
       btn.innerHTML = '✓ Sent';
       btn.style.color = 'var(--success)';
       btn.style.borderColor = 'var(--success)';
+      // Reset after 4s so it can be used again
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.style.color = '';
+        btn.style.borderColor = '';
+        btn.disabled = false;
+      }, 4000);
     } else {
       btn.innerHTML = orig;
       btn.disabled = false;
-      showToast('Could not send reminder', 'error');
+      showToast(data.error || 'Could not send reminder', 'error');
     }
   } catch(e) {
     btn.innerHTML = orig;
     btn.disabled = false;
-    showToast('Could not send reminder', 'error');
+    showToast('Could not reach server', 'error');
   }
 }
 
@@ -1347,20 +1355,30 @@ async function sendRemindAll() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Sending…';
   try {
-    const r = await fetch(API_BASE + '/api/send-reminders', { method: 'POST' });
+    const r = await fetch(API_BASE + '/api/send-reminders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const data = await r.json().catch(() => ({}));
     if (r.ok) {
-      btn.innerHTML = '✓ Reminders sent!';
-      btn.style.opacity = '.7';
-      showToast('Reminders sent to everyone pending', 'success');
+      const n = data.sent || 0;
+      btn.innerHTML = `✓ ${n} reminder${n !== 1 ? 's' : ''} sent!`;
+      showToast(`Sent ${n} reminder${n !== 1 ? 's' : ''}`, 'success');
+      // Reset after 5s so it can be used again
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.disabled = false;
+      }, 5000);
     } else {
       btn.innerHTML = orig;
       btn.disabled = false;
-      showToast('Could not send reminders', 'error');
+      showToast(data.error || 'Could not send reminders', 'error');
     }
   } catch(e) {
     btn.innerHTML = orig;
     btn.disabled = false;
-    showToast('Could not send reminders', 'error');
+    showToast('Could not reach server', 'error');
   }
 }
 

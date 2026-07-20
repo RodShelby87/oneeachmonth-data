@@ -126,7 +126,10 @@ async function sendAllPendingReminders(calledByMonth = null) {
   }
 
   const appUrl = process.env.APP_URL || 'https://oneeachmonth.onrender.com';
-  const query  = calledByMonth ? { expression: '', month: calledByMonth } : { expression: '' };
+  const emptyExpr = { $or: [{ expression: '' }, { expression: null }, { expression: { $exists: false } }] };
+  const query  = calledByMonth
+    ? { month: calledByMonth, ...emptyExpr }
+    : emptyExpr;
 
   const pendingSlots = await Submission.find(query).lean();
   if (!pendingSlots.length) {
@@ -416,11 +419,15 @@ app.post('/api/send-reminders', async (req, res) => {
     if (targetUsername && targetMonth) {
       // Single targeted reminder
       const user = await User.findOne({ username: targetUsername });
-      if (!user) return res.status(404).json({ error: 'User not found' });
+      if (!user) return res.status(404).json({ error: `User "${targetUsername}" not found` });
 
-      // Verify there really is a pending slot for this month
-      const slot = await Submission.findOne({ userId: user._id, month: targetMonth, expression: '' });
-      if (!slot) return res.status(400).json({ error: 'No pending submission found for that user/month' });
+      // Check for a pending slot — expression is '', null, undefined, or missing
+      const slot = await Submission.findOne({
+        userId: user._id,
+        month: targetMonth,
+        $or: [{ expression: '' }, { expression: null }, { expression: { $exists: false } }]
+      });
+      if (!slot) return res.status(400).json({ error: `No pending submission found for ${targetUsername} in ${targetMonth}` });
 
       await sendSingleReminder(user, targetMonth);
       return res.json({ ok: true, sent: 1 });

@@ -64,18 +64,32 @@ async function syncToGitHub(data) {
 }
 
 // ── Email helpers ─────────────────────────────────────────────────────
-// ── Email via Resend HTTP API ─────────────────────────────────────────
+// ── Email via Brevo HTTP API ──────────────────────────────────────────
 // Plain HTTPS on port 443 — no SMTP, no blocked ports.
-async function resendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new Error('RESEND_API_KEY is not set');
-  const from = process.env.RESEND_FROM || 'OneEachMonth <onboarding@resend.dev>';
-  const res = await fetch('https://api.resend.com/emails', {
+async function sendEmail({ to, subject, html }) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) throw new Error('BREVO_API_KEY is not set');
+
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.GMAIL_USER;
+  const senderName  = process.env.BREVO_SENDER_NAME  || 'OneEachMonth';
+  if (!senderEmail) throw new Error('BREVO_SENDER_EMAIL (or GMAIL_USER) is not set');
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method:  'POST',
-    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ from, to, subject, html }),
+    headers: {
+      'api-key':       apiKey,
+      'Content-Type':  'application/json',
+      'Accept':        'application/json',
+    },
+    body: JSON.stringify({
+      sender:      { email: senderEmail, name: senderName },
+      to:          [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
   });
-  const data = await res.json();
+
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.message || JSON.stringify(data));
   return data;
 }
@@ -108,7 +122,7 @@ function reminderHtml(username, month, appUrl) {
 // Send a reminder to ONE specific user for ONE specific month.
 async function sendSingleReminder(user, month) {
   const appUrl = process.env.APP_URL || 'https://oneeachmonth.onrender.com';
-  await resendEmail({
+  await sendEmail({
     to:      user.email,
     subject: `Hey ${user.username}, your expression for ${formatMonth(month)} is missing 👀`,
     html:    reminderHtml(user.username, month, appUrl),
@@ -120,8 +134,8 @@ async function sendSingleReminder(user, month) {
 // Send reminders to ALL users who have ANY pending (empty) submission.
 // When calledByMonth is set (cron use), only checks that specific month.
 async function sendAllPendingReminders(calledByMonth = null) {
-  if (!process.env.RESEND_API_KEY) {
-    console.log('RESEND_API_KEY not set — skipping reminders.');
+  if (!process.env.BREVO_API_KEY) {
+    console.log('BREVO_API_KEY not set — skipping reminders.');
     return { sent: 0, skipped: 0, errors: 0 };
   }
 
@@ -158,7 +172,7 @@ async function sendAllPendingReminders(calledByMonth = null) {
       : `${entry.months.length} months`;
 
     try {
-      await resendEmail({
+      await sendEmail({
         to:      user.email,
         subject: `Hey ${user.username}, you're missing expressions for ${subjectLabel} 👀`,
         html: `
@@ -392,15 +406,15 @@ app.post('/api/comments', async (req, res) => {
 });
 
 // ── Test email (debug only) ───────────────────────────────────────────
-// GET /api/test-email  → sends a test email to yourself and returns any error
+// GET /api/test-email  → sends a test email and returns any error
 app.get('/api/test-email', async (req, res) => {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'RESEND_API_KEY not set' });
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'BREVO_API_KEY not set' });
   try {
-    const data = await resendEmail({
-      to:      process.env.GMAIL_USER || 'delivered@resend.dev',
+    const data = await sendEmail({
+      to:      process.env.GMAIL_USER || process.env.BREVO_SENDER_EMAIL,
       subject: 'OneEachMonth — email test ✓',
-      html:    '<p>If you got this, Resend is working correctly.</p>',
+      html:    '<p>If you got this, Brevo is working correctly.</p>',
     });
     res.json({ ok: true, data });
   } catch(err) {

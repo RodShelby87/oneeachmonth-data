@@ -63,34 +63,81 @@ async function syncToGitHub(data) {
   } catch(err) { console.error('GitHub sync failed:', err.message); }
 }
 
-// ── Email helpers ─────────────────────────────────────────────────────
-// ── Email via Brevo HTTP API ──────────────────────────────────────────
-// Plain HTTPS on port 443 — no SMTP, no blocked ports.
-async function sendEmail({ to, subject, html }) {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) throw new Error('BREVO_API_KEY is not set');
+// ── Email via Gmail API (OAuth2) ──────────────────────────────────────
+// Plain HTTPS on port 443, authenticated as the real Gmail account —
+// no SMTP, no blocked ports, no third-party sender/DMARC rejection.
+let _cachedAccessToken = null;
+let _cachedTokenExpiry = 0;
 
-  const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.GMAIL_USER;
-  const senderName  = process.env.BREVO_SENDER_NAME  || 'OneEachMonth';
-  if (!senderEmail) throw new Error('BREVO_SENDER_EMAIL (or GMAIL_USER) is not set');
+async function getGmailAccessToken() {
+  const now = Date.now();
+  if (_cachedAccessToken && now < _cachedTokenExpiry - 60000) {
+    return _cachedAccessToken; // reuse until ~1 min before expiry
+  }
 
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+  const clientId     = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken  = process.env.GOOGLE_REFRESH_TOKEN;
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error('GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or GOOGLE_REFRESH_TOKEN is not set');
+  }
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
     method:  'POST',
-    headers: {
-      'api-key':       apiKey,
-      'Content-Type':  'application/json',
-      'Accept':        'application/json',
-    },
-    body: JSON.stringify({
-      sender:      { email: senderEmail, name: senderName },
-      to:          [{ email: to }],
-      subject,
-      htmlContent: html,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id:     clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type:    'refresh_token',
     }),
   });
 
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || data.error || 'Failed to refresh Gmail access token');
+
+  _cachedAccessToken = data.access_token;
+  _cachedTokenExpiry = now + (data.expires_in * 1000);
+  return _cachedAccessToken;
+}
+
+function base64UrlEncode(str) {
+  return Buffer.from(str, 'utf-8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+async function sendEmail({ to, subject, html }) {
+  const accessToken = await getGmailAccessToken();
+  const fromEmail = process.env.GMAIL_USER;
+  if (!fromEmail) throw new Error('GMAIL_USER is not set');
+
+  // Build a minimal RFC 2822 MIME message
+  const messageLines = [
+    `From: OneEachMonth <${fromEmail}>`,
+    `To: ${to}`,
+    `Subject: =?UTF-8?B?${Buffer.from(subject, 'utf-8').toString('base64')}?=`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/html; charset=UTF-8',
+    '',
+    html,
+  ].join('\r\n');
+
+  const raw = base64UrlEncode(messageLines);
+
+  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method:  'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({ raw }),
+  });
+
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+  if (!res.ok) throw new Error(data.error?.message || JSON.stringify(data));
   return data;
 }
 
@@ -134,8 +181,8 @@ async function sendSingleReminder(user, month) {
 // Send reminders to ALL users who have ANY pending (empty) submission.
 // When calledByMonth is set (cron use), only checks that specific month.
 async function sendAllPendingReminders(calledByMonth = null) {
-  if (!process.env.BREVO_API_KEY) {
-    console.log('BREVO_API_KEY not set — skipping reminders.');
+  if (!process.env.GOOGLE_REFRESH_TOKEN) {
+    console.log('GOOGLE_REFRESH_TOKEN not set — skipping reminders.');
     return { sent: 0, skipped: 0, errors: 0 };
   }
 
@@ -408,13 +455,12 @@ app.post('/api/comments', async (req, res) => {
 // ── Test email (debug only) ───────────────────────────────────────────
 // GET /api/test-email  → sends a test email and returns any error
 app.get('/api/test-email', async (req, res) => {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'BREVO_API_KEY not set' });
+  if (!process.env.GOOGLE_REFRESH_TOKEN) return res.status(500).json({ error: 'GOOGLE_REFRESH_TOKEN not set' });
   try {
     const data = await sendEmail({
-      to:      process.env.GMAIL_USER || process.env.BREVO_SENDER_EMAIL,
+      to:      process.env.GMAIL_USER,
       subject: 'OneEachMonth — email test ✓',
-      html:    '<p>If you got this, Brevo is working correctly.</p>',
+      html:    '<p>If you got this, Gmail API is working correctly.</p>',
     });
     res.json({ ok: true, data });
   } catch(err) {

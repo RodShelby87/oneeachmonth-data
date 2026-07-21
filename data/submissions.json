@@ -5,7 +5,7 @@
     "username": "Alanheck22",
     "month": "2026-07",
     "expression": "By skin of your teeth",
-    "definition": "",
+    "definition": "by a very narrow margin",
     "example": "",
     "link": "",
     "userComment": "You barely managed to do something or just barely escaped a difficult situation.",
@@ -24,6 +24,19 @@
     "userComment": "",
     "__v": 0,
     "submittedAt": "2026-07-15T19:02:50.169Z"
+  },
+  {
+    "_id": "6a5ff554f3faaaf8ee3ba729",
+    "userId": "6a5ff554f3faaaf8ee3ba727",
+    "username": "bel",
+    "month": "2026-07",
+    "expression": "How the tables have turned",
+    "definition": "",
+    "example": "",
+    "link": "",
+    "userComment": "",
+    "__v": 0,
+    "submittedAt": "2026-07-21T22:56:05.144Z"
   },
   {
     "_id": "6a5babf4bb529455d4d6b37a",

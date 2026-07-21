@@ -1,5 +1,18 @@
 [
   {
+    "_id": "6a5c03d70759e204171030c5",
+    "userId": "6a5c03d70759e204171030c3",
+    "username": "Alanheck22",
+    "month": "2026-07",
+    "expression": "By skin of your teeth",
+    "definition": "",
+    "example": "",
+    "link": "",
+    "userComment": "You barely managed to do something or just barely escaped a difficult situation.",
+    "__v": 0,
+    "submittedAt": "2026-07-21T22:31:53.650Z"
+  },
+  {
     "_id": "6a57d94af11da891a28c452f",
     "userId": "6a5795428ed29f665d55433e",
     "username": "Rodri",
@@ -44,7 +57,7 @@
     "month": "2026-03",
     "userId": "6a5795428ed29f665d55433e",
     "__v": 0,
-    "definition": "",
+    "definition": "to divulge secret or hidden information",
     "example": "",
     "link": "https://www.youtube.com/shorts/nEWI0PchQYU",
     "submittedAt": "2026-07-18T17:12:14.392Z",

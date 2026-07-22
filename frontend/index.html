@@ -385,6 +385,19 @@
   .profile-stat-num { font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 900; color: var(--accent); min-width: 40px; }
   .profile-stat-label { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.4; }
 
+  /* ── Meaning picker options ─────────────────────────────── */
+  .meaning-option {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border: 1.5px solid var(--rule); border-radius: var(--radius-sm);
+    margin-bottom: 8px; cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .meaning-option:hover { border-color: var(--accent); }
+  .meaning-option.selected { border-color: var(--accent); background: var(--accent-bg); }
+  .meaning-option input[type="radio"] { margin-top: 3px; flex-shrink: 0; accent-color: var(--accent); }
+  .meaning-option-text { font-size: 0.88rem; color: var(--ink); line-height: 1.5; }
+  .meaning-option.empty-option { border-style: dashed; }
+  .meaning-option.empty-option .meaning-option-text { color: var(--ink-soft); font-style: italic; }
+
   @media (max-width: 520px) {
     header { flex-direction: column; align-items: flex-start; }
     .header-right { width: 100%; justify-content: space-between; }
@@ -656,6 +669,33 @@
   </div>
 </div>
 
+<!-- Meaning picker modal -->
+<div class="modal-overlay" id="meaning-modal" onclick="closeModalOnBg(event,'meaning-modal')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700">Choose a meaning</div>
+        <div style="font-size:0.82rem;color:var(--ink-soft);margin-top:3px">Pick the option that fits best, or leave it empty</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('meaning-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Search term <span class="label-opt">(only affects this search — not your submitted expression)</span></label>
+        <div style="display:flex;gap:8px">
+          <input id="meaning-search-term" type="text" style="flex:1" />
+          <button class="btn btn-outline btn-sm" onclick="researchMeaning()">🔍 Search</button>
+        </div>
+      </div>
+      <div id="meaning-options-list" style="margin-top:16px"></div>
+      <div id="meaning-error" class="error-msg"></div>
+      <button id="meaning-confirm-btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px" onclick="confirmMeaningChoice()" disabled>
+        Continue
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast notification -->
 <div id="toast" style="display:none"></div>
 
@@ -786,6 +826,7 @@ async function submitAuth() {
   const email      = document.getElementById('auth-email').value.trim();
   const errEl      = document.getElementById('auth-error');
   errEl.textContent = '';
+  errEl.className = 'error-msg';
   if (!identifier || !email) { errEl.textContent = 'Please fill in both fields.'; return; }
   try {
     let endpoint, body;
@@ -800,11 +841,17 @@ async function submitAuth() {
     }
     const r = await fetch(API_BASE + endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
     const data = await r.json();
-    if (!r.ok) { errEl.textContent = data.error || 'Something went wrong.'; return; }
+    if (!r.ok) { errEl.className = 'error-msg'; errEl.textContent = data.error || 'Something went wrong.'; return; }
+    if (isRegister && data.pending) {
+      // Account created but awaiting manual approval — don't log in yet
+      errEl.className = 'success-msg';
+      errEl.textContent = data.message || 'Your account is awaiting approval.';
+      return;
+    }
     currentUser = data;
     localStorage.setItem('oem_user', JSON.stringify(currentUser));
     await showMain();
-  } catch(e) { errEl.textContent = 'Cannot reach server. Check your connection.'; }
+  } catch(e) { errEl.className = 'error-msg'; errEl.textContent = 'Cannot reach server. Check your connection.'; }
 }
 
 // ── Main ──────────────────────────────────────────────────────────────
@@ -1018,73 +1065,125 @@ async function saveNewSubmission() {
   const link        = document.getElementById('ns-link').value.trim();
   const userComment = document.getElementById('ns-comment').value.trim();
   const errEl       = document.getElementById('ns-error');
-  const saveBtn     = document.getElementById('ns-save-btn');
   errEl.textContent = '';
   if (!expression) { errEl.textContent = 'Please enter an expression.'; return; }
 
-  saveBtn.disabled = true;
-  saveBtn.innerHTML = '<span class="spinner"></span> Saving…';
-  closeModal('new-sub-modal');
-  showToast('Saving expression…', 'loading');
-
   const editId = document.getElementById('new-sub-modal').dataset.editId;
-  try {
-    const r = await fetch(API_BASE + '/api/submissions', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ userId: currentUser._id, username: currentUser.username,
-        month: pendingMonth, expression, definition: '', example: '', link, userComment,
-        ...(editId ? { editId } : {}) })
-    });
-    if (!r.ok) {
-      const d = await r.json();
-      showToast(d.error || 'Could not save.', 'error');
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = '✨ Save expression';
-      openModal('new-sub-modal');
-      errEl.textContent = d.error || 'Could not save.';
-      return;
-    }
-    const saved = await r.json();
-    showToast('Saved! Looking up meaning…', 'loading');
-    // Update view month so user sees what they just submitted
-    myViewMonth = pendingMonth;
-    await loadAll();
-    renderMySubmissions();
-    saveBtn.disabled = false;
-    saveBtn.innerHTML = '✨ Save expression';
-    silentLookup(saved._id, expression);
-  } catch(e) {
-    showToast('Could not save. Check your connection.', 'error');
-    saveBtn.disabled = false;
-    saveBtn.innerHTML = '✨ Save expression';
-    openModal('new-sub-modal');
-    errEl.textContent = 'Could not save. Check your connection.';
-  }
+
+  // Stash everything needed to actually save — the meaning picker modal
+  // only decides the `definition` field, nothing else changes here.
+  pendingSubmissionPayload = { expression, link, userComment, editId, month: pendingMonth };
+
+  closeModal('new-sub-modal');
+  openMeaningModal(expression);
 }
 
-async function silentLookup(subId, expression) {
+// ── Meaning picker ───────────────────────────────────────────────────
+let pendingSubmissionPayload = null;
+let meaningOptions = [];
+let selectedMeaning = undefined; // index into meaningOptions, or 'empty'
+
+function openMeaningModal(expression) {
+  document.getElementById('meaning-search-term').value = expression;
+  document.getElementById('meaning-error').textContent = '';
+  document.getElementById('meaning-confirm-btn').disabled = true;
+  document.getElementById('meaning-options-list').innerHTML =
+    '<div style="text-align:center;padding:20px 0"><span class="spinner"></span> Searching…</div>';
+  openModal('meaning-modal');
+  fetchMeaningOptions(expression);
+}
+
+async function researchMeaning() {
+  const term = document.getElementById('meaning-search-term').value.trim();
+  if (!term) return;
+  document.getElementById('meaning-error').textContent = '';
+  document.getElementById('meaning-options-list').innerHTML =
+    '<div style="text-align:center;padding:20px 0"><span class="spinner"></span> Searching…</div>';
+  document.getElementById('meaning-confirm-btn').disabled = true;
+  await fetchMeaningOptions(term);
+}
+
+async function fetchMeaningOptions(term) {
+  selectedMeaning = undefined;
   try {
-    const response = await fetch(API_BASE + '/api/lookup-meaning', {
+    const r = await fetch(API_BASE + '/api/lookup-meaning-options', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subId, expression })
+      body: JSON.stringify({ expression: term })
     });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      showToast('Could not find meaning: ' + (err.error || response.status), 'error');
+    const data = await r.json().catch(() => ({}));
+    meaningOptions = r.ok ? (data.options || []) : [];
+    if (!r.ok) document.getElementById('meaning-error').textContent = data.error || 'Could not search for meanings.';
+  } catch(e) {
+    meaningOptions = [];
+    document.getElementById('meaning-error').textContent = 'Could not reach server.';
+  }
+  renderMeaningOptions();
+}
+
+function renderMeaningOptions() {
+  const list = document.getElementById('meaning-options-list');
+  let html = '';
+  if (meaningOptions.length === 0) {
+    html += `<div style="font-size:.85rem;color:var(--ink-faint);padding:6px 0 14px">No definitions found for this search — try editing the term above, or leave it empty.</div>`;
+  } else {
+    html += meaningOptions.map((opt, i) => `
+      <label class="meaning-option" onclick="selectMeaning(${i}, this)">
+        <input type="radio" name="meaning-choice" />
+        <span class="meaning-option-text">${escHtml(opt)}</span>
+      </label>
+    `).join('');
+  }
+  html += `
+    <label class="meaning-option empty-option" onclick="selectMeaning('empty', this)">
+      <input type="radio" name="meaning-choice" />
+      <span class="meaning-option-text">Leave it empty — none of these fit</span>
+    </label>
+  `;
+  list.innerHTML = html;
+}
+
+function selectMeaning(choice, el) {
+  selectedMeaning = choice;
+  document.querySelectorAll('#meaning-options-list .meaning-option').forEach(o => {
+    o.classList.remove('selected');
+    o.querySelector('input').checked = false;
+  });
+  el.classList.add('selected');
+  el.querySelector('input').checked = true;
+  document.getElementById('meaning-confirm-btn').disabled = false;
+}
+
+async function confirmMeaningChoice() {
+  if (selectedMeaning === undefined || !pendingSubmissionPayload) return;
+  const definition = selectedMeaning === 'empty' ? '' : (meaningOptions[selectedMeaning] || '');
+  const payload = pendingSubmissionPayload;
+  pendingSubmissionPayload = null;
+
+  closeModal('meaning-modal');
+  showToast('Saving expression…', 'loading');
+
+  try {
+    const r = await fetch(API_BASE + '/api/submissions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUser._id, username: currentUser.username,
+        month: payload.month, expression: payload.expression,
+        definition, example: '', link: payload.link, userComment: payload.userComment,
+        ...(payload.editId ? { editId: payload.editId } : {})
+      })
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      showToast(d.error || 'Could not save.', 'error');
       return;
     }
-    const data = await response.json();
-    if (!data.definition) {
-      showToast('No meaning found for this expression', 'error');
-      return;
-    }
+    myViewMonth = payload.month;
     await loadAll();
     renderMySubmissions();
-    renderAllGrid();
-    showToast('\u2713 Meaning found!', 'success');
+    showToast(definition ? '✓ Saved with meaning!' : '✓ Saved!', 'success');
   } catch(e) {
-    showToast('Lookup error: ' + e.message, 'error');
+    showToast('Could not save. Check your connection.', 'error');
   }
 }
 

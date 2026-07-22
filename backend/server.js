@@ -44,7 +44,8 @@ const commentSchema = new mongoose.Schema({
   username:  { type: String, required: true },
   text:      { type: String, required: true },
   parentId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  editedAt:  { type: Date, default: null }
 });
 
 const notificationSchema = new mongoose.Schema({
@@ -717,6 +718,27 @@ app.post('/api/comments', async (req, res) => {
         });
       }
     } catch(e) { console.error('Comment notification failed:', e.message); }
+
+    res.json(comment);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/comments/:id  { username, text }
+//   Edits a comment's text. Only the original author (matched by username)
+//   can edit — this app has no auth tokens, so ownership is checked by
+//   comparing the requester's username against the comment's stored one.
+app.put('/api/comments/:id', async (req, res) => {
+  try {
+    const { username, text } = req.body;
+    if (!username || !text || !text.trim()) return res.status(400).json({ error: 'Missing fields' });
+
+    const comment = await Comment.findById(req.params.id);
+    if (!comment) return res.status(404).json({ error: 'Comment not found' });
+    if (comment.username !== username) return res.status(403).json({ error: 'You can only edit your own comments' });
+
+    comment.text = text.trim();
+    comment.editedAt = new Date();
+    await comment.save();
 
     res.json(comment);
   } catch(err) { res.status(500).json({ error: err.message }); }

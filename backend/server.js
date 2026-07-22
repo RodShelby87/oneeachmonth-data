@@ -2,6 +2,7 @@ const express    = require('express');
 const mongoose   = require('mongoose');
 const cors       = require('cors');
 const bcrypt     = require('bcryptjs');
+const crypto     = require('crypto');
 const cron       = require('node-cron');
 const { Octokit } = require('@octokit/rest');
 require('dotenv').config();
@@ -12,11 +13,17 @@ app.use(express.json({ limit: '2mb' }));
 
 mongoose.connect(process.env.MONGODB_URI);
 
+// Backend's own public URL — used for admin approve/reject email links
+const BACKEND_URL = process.env.BACKEND_URL || 'https://oneeachmonth-data.onrender.com';
+
 // ── Schemas ──────────────────────────────────────────────────────────
 const userSchema = new mongoose.Schema({
   username:  { type: String, unique: true, required: true },
   email:     { type: String, unique: true, required: true },
   password:  { type: String, required: true },
+  // Existing users (created before this field existed) default to 'approved'
+  // so this change never locks out anyone already using the site.
+  status:    { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -166,7 +173,61 @@ function reminderHtml(username, month, appUrl) {
   `;
 }
 
-// Send a reminder to ONE specific user for ONE specific month.
+// ── Admin approval for new signups ────────────────────────────────────
+function escapeHtmlServer(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Signed token so the approve/reject links in the email can't be guessed
+// or reused for a different user/action.
+function approvalToken(userId, action) {
+  const secret = process.env.APPROVAL_SECRET || process.env.GOOGLE_CLIENT_SECRET || 'oem-fallback-secret';
+  return crypto.createHmac('sha256', secret).update(`${userId}:${action}`).digest('hex').slice(0, 40);
+}
+
+function adminApprovalHtml(user, approveUrl, rejectUrl) {
+  return `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fffbf5;border-radius:12px">
+      <h1 style="font-size:1.4rem;margin-bottom:8px;color:#1c1917">New user wants to join OneEachMonth</h1>
+      <p style="color:#57534e;font-size:1rem;line-height:1.6;margin-bottom:24px">
+        <strong>${escapeHtmlServer(user.username)}</strong> (${escapeHtmlServer(user.email)}) just signed up and is waiting for your approval.
+      </p>
+      <table role="presentation" width="100%"><tr>
+        <td style="padding-right:8px">
+          <a href="${approveUrl}" style="display:block;text-align:center;background:#059669;color:#fff;font-weight:700;font-size:1rem;padding:14px 20px;border-radius:8px;text-decoration:none">✓ Approve</a>
+        </td>
+        <td style="padding-left:8px">
+          <a href="${rejectUrl}" style="display:block;text-align:center;background:#dc2626;color:#fff;font-weight:700;font-size:1rem;padding:14px 20px;border-radius:8px;text-decoration:none">✕ Reject</a>
+        </td>
+      </tr></table>
+      <p style="color:#a8a29e;font-size:0.8rem;margin-top:32px">— OneEachMonth</p>
+    </div>
+  `;
+}
+
+async function sendAdminApprovalEmail(user) {
+  const adminEmail = process.env.GMAIL_USER;
+  if (!adminEmail) { console.log('GMAIL_USER not set — cannot send admin approval email.'); return; }
+  const approveUrl = `${BACKEND_URL}/api/admin/approve-user?id=${user._id}&token=${approvalToken(user._id, 'approve')}`;
+  const rejectUrl  = `${BACKEND_URL}/api/admin/reject-user?id=${user._id}&token=${approvalToken(user._id, 'reject')}`;
+  await sendEmail({
+    to:      adminEmail,
+    subject: `New signup: ${user.username} needs approval`,
+    html:    adminApprovalHtml(user, approveUrl, rejectUrl),
+  });
+  console.log(`Admin approval email sent for ${user.username}`);
+}
+
+// Renders a plain confirmation page — this is what the admin sees after
+// clicking Approve/Reject in the email (a link click, not an API call).
+function approvalResultPage(title, msg, color) {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title></head>
+  <body style="font-family:sans-serif;max-width:480px;margin:60px auto;text-align:center;padding:0 20px">
+    <h1 style="color:${color}">${title}</h1>
+    <p style="color:#57534e;font-size:1rem;line-height:1.6">${msg}</p>
+  </body></html>`;
+}
 async function sendSingleReminder(user, month) {
   const appUrl = process.env.APP_URL || 'https://oneeachmonth.onrender.com';
   await sendEmail({
@@ -266,10 +327,17 @@ app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
     if (!username || !email) return res.status(400).json({ error: 'Username and email required' });
     const hashed = await bcrypt.hash(password || 'oem-default', 10);
-    const user = await User.create({ username, email, password: hashed });
+    const user = await User.create({ username, email, password: hashed, status: 'pending' });
     const month = new Date().toISOString().slice(0, 7);
     await Submission.create({ userId: user._id, username, month });
-    res.json({ _id: user._id, username: user.username, email: user.email });
+
+    // Fire-and-forget — don't block registration if the email fails
+    sendAdminApprovalEmail(user).catch(err => console.error('Admin approval email failed:', err.message));
+
+    res.json({
+      pending: true,
+      message: "Thanks! Your account is waiting for approval — you'll be able to sign in once it's confirmed."
+    });
   } catch(err) {
     if (err.code === 11000) {
       const field = Object.keys(err.keyValue)[0];
@@ -288,9 +356,49 @@ app.post('/api/login-no-password', async (req, res) => {
       email: email
     });
     if (!user) return res.status(400).json({ error: 'No account found with that username and email' });
+    if (user.status === 'pending')  return res.status(403).json({ error: 'Your account is still awaiting approval.' });
+    if (user.status === 'rejected') return res.status(403).json({ error: 'Your registration was not approved.' });
     res.json({ _id: user._id, username: user.username, email: user.email, createdAt: user.createdAt });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+// ── Admin approval links (clicked directly from the notification email) ─
+async function handleApprovalAction(req, res, newStatus) {
+  const { id, token } = req.query;
+  const action = newStatus === 'approved' ? 'approve' : 'reject';
+  const expected = id ? approvalToken(id, action) : null;
+
+  if (!id || !token || token !== expected) {
+    return res.status(403).send(approvalResultPage('Invalid or expired link', 'This approval link is not valid.', '#dc2626'));
+  }
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).send(approvalResultPage('User not found', 'This user no longer exists.', '#dc2626'));
+
+    if (user.status !== 'pending') {
+      return res.send(approvalResultPage('Already handled', `${escapeHtmlServer(user.username)} was already marked as <strong>${user.status}</strong>.`, '#57534e'));
+    }
+
+    user.status = newStatus;
+    await user.save();
+
+    if (newStatus === 'rejected') {
+      // Clean up their empty placeholder submission slot
+      await Submission.deleteMany({ userId: user._id, expression: '' });
+    }
+
+    return res.send(approvalResultPage(
+      newStatus === 'approved' ? 'User approved ✓' : 'User rejected',
+      `${escapeHtmlServer(user.username)} (${escapeHtmlServer(user.email)}) has been <strong>${newStatus}</strong>.`,
+      newStatus === 'approved' ? '#059669' : '#dc2626'
+    ));
+  } catch(err) {
+    return res.status(500).send(approvalResultPage('Error', escapeHtmlServer(err.message), '#dc2626'));
+  }
+}
+
+app.get('/api/admin/approve-user', (req, res) => handleApprovalAction(req, res, 'approved'));
+app.get('/api/admin/reject-user',  (req, res) => handleApprovalAction(req, res, 'rejected'));
 
 // ── User profile: update ─────────────────────────────────────────────
 app.put('/api/users/:id', async (req, res) => {
@@ -424,6 +532,52 @@ app.post('/api/submissions/patch-meaning', async (req, res) => {
     if (!subId || !definition) return res.status(400).json({ error: 'Missing fields' });
     await Submission.findByIdAndUpdate(subId, { definition });
     res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Meaning lookup — multiple options, used by the pre-save picker ────
+// Returns an array of candidate definitions so the user can choose one,
+// edit the search term to try again, or decline all of them.
+app.post('/api/lookup-meaning-options', async (req, res) => {
+  try {
+    const { expression } = req.body;
+    if (!expression) return res.status(400).json({ error: 'Missing expression' });
+    const key = process.env.MERRIAM_WEBSTER_KEY;
+    if (!key) return res.status(500).json({ error: 'API key not configured' });
+
+    const queries = [
+      expression.toLowerCase().trim(),
+      expression.toLowerCase().replace(/["""'']/g, '').trim(),
+      expression.toLowerCase().split(' ').filter(w => w.length > 3)[0]
+    ].filter(Boolean);
+
+    const options = [];
+    const seen = new Set();
+
+    for (const query of queries) {
+      const url = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${encodeURIComponent(query)}?key=${key}`;
+      const r = await fetch(url);
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (!Array.isArray(data)) continue;
+
+      for (const entry of data) {
+        if (typeof entry === 'string') continue; // spelling suggestion, not a real entry
+        if (entry.shortdef && entry.shortdef.length) {
+          for (const def of entry.shortdef) {
+            const clean = def.trim();
+            const key2 = clean.toLowerCase();
+            if (clean && !seen.has(key2)) {
+              seen.add(key2);
+              options.push(clean);
+            }
+          }
+        }
+      }
+      if (options.length >= 6) break;
+    }
+
+    res.json({ options: options.slice(0, 6) });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 

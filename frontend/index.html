@@ -1695,12 +1695,24 @@ function renderComment(c, all) {
   const replies = all.filter(r => r.parentId === c._id);
   const initials = c.username.slice(0,2).toUpperCase();
   const date = new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const isMine = currentUser && c.username === currentUser.username;
+  const editedTag = c.editedAt ? '<span style="font-style:italic;color:var(--ink-faint)">(edited)</span>' : '';
   return `<div class="comment" id="comment-${c._id}">
     <div class="comment-avatar">${initials}</div>
     <div class="comment-body">
-      <div class="comment-meta"><span class="comment-author">${escHtml(c.username)}</span><span>${date}</span></div>
-      <div class="comment-text">${escHtml(c.text)}</div>
-      <button class="reply-btn" onclick="toggleReplyBox('${c._id}')">↩ Reply</button>
+      <div class="comment-meta"><span class="comment-author">${escHtml(c.username)}</span><span>${date}</span>${editedTag}</div>
+      <div class="comment-text" id="comment-text-${c._id}">${escHtml(c.text)}</div>
+      <div id="comment-edit-box-${c._id}" style="display:none;margin-top:8px">
+        <textarea id="comment-edit-input-${c._id}" rows="2" style="font-size:.88rem"></textarea>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="btn btn-primary btn-xs" onclick="saveCommentEdit('${c._id}')">Save</button>
+          <button class="btn btn-outline btn-xs" onclick="toggleCommentEdit('${c._id}')">Cancel</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px">
+        <button class="reply-btn" onclick="toggleReplyBox('${c._id}')">↩ Reply</button>
+        ${isMine ? `<button class="reply-btn" onclick="toggleCommentEdit('${c._id}')">✏️ Edit</button>` : ''}
+      </div>
       <div id="reply-box-${c._id}" style="display:none;margin-top:8px">
         <div class="new-comment-box">
           <div class="comment-avatar" style="width:22px;height:22px;font-size:.6rem">${currentUser ? currentUser.username.slice(0,2).toUpperCase() : '?'}</div>
@@ -1716,6 +1728,43 @@ function renderComment(c, all) {
       ${replies.length ? `<div class="replies">${replies.map(r => renderComment(r, all)).join('')}</div>` : ''}
     </div>
   </div>`;
+}
+
+function toggleCommentEdit(commentId) {
+  const textEl = document.getElementById('comment-text-' + commentId);
+  const box    = document.getElementById('comment-edit-box-' + commentId);
+  const input  = document.getElementById('comment-edit-input-' + commentId);
+  const opening = box.style.display === 'none';
+  if (opening) {
+    input.value = textEl.textContent;
+    textEl.style.display = 'none';
+    box.style.display = '';
+    input.focus();
+  } else {
+    textEl.style.display = '';
+    box.style.display = 'none';
+  }
+}
+
+async function saveCommentEdit(commentId) {
+  const input = document.getElementById('comment-edit-input-' + commentId);
+  const text = input.value.trim();
+  if (!text) return;
+  try {
+    const r = await fetch(API_BASE + '/api/comments/' + commentId, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: currentUser.username, text })
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      showToast(d.error || 'Could not save edit.', 'error');
+      return;
+    }
+    await loadComments(activeSubId);
+    showToast('✓ Comment updated', 'success');
+  } catch(e) {
+    showToast('Could not reach server.', 'error');
+  }
 }
 
 function toggleReplyBox(commentId) {

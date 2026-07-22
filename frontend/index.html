@@ -386,6 +386,45 @@
   .profile-stat-num { font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 900; color: var(--accent); min-width: 40px; }
   .profile-stat-label { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.4; }
 
+  /* ── Notifications ───────────────────────────────────────── */
+  .notif-wrap { position: relative; display: inline-flex; }
+  .notif-btn {
+    position: relative; background: var(--card2); border: 1px solid var(--rule);
+    border-radius: 50%; width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1rem; transition: border-color .15s, background .15s;
+  }
+  .notif-btn:hover { border-color: var(--accent); }
+  .notif-badge {
+    position: absolute; top: -4px; right: -4px;
+    background: var(--danger); color: #fff; font-size: 0.65rem; font-weight: 700;
+    min-width: 16px; height: 16px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; padding: 0 4px; line-height: 1;
+    box-shadow: 0 0 0 2px var(--page);
+  }
+  .notif-dropdown {
+    position: absolute; top: calc(100% + 10px); right: 0;
+    background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius);
+    box-shadow: var(--shadow-md); width: 320px; max-height: 420px; overflow-y: auto;
+    z-index: 150; opacity: 0; pointer-events: none; transform: translateY(-6px);
+    transition: opacity .18s, transform .18s;
+  }
+  .notif-dropdown.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+  .notif-dropdown-title {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-faint); padding: 14px 16px 10px;
+    position: sticky; top: 0; background: var(--card); border-bottom: 1px solid var(--rule);
+  }
+  .notif-item { display: flex; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--rule); position: relative; }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+  .notif-body { flex: 1; min-width: 0; }
+  .notif-msg { font-size: 0.83rem; color: var(--ink); line-height: 1.45; }
+  .notif-item.unread .notif-msg { font-weight: 600; }
+  .notif-time { font-size: 0.7rem; color: var(--ink-faint); margin-top: 4px; }
+  .notif-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); position: absolute; top: 14px; right: 14px; flex-shrink: 0; }
+  .notif-empty { text-align: center; padding: 32px 16px; color: var(--ink-faint); font-size: 0.85rem; }
+
   /* ── Meaning picker options ─────────────────────────────── */
   .meaning-option {
     display: flex; align-items: flex-start; gap: 10px;
@@ -427,6 +466,16 @@
       <div class="tagline">One expression. Every month.</div>
     </div>
     <div class="header-right">
+      <div class="notif-wrap" id="notif-wrap" style="display:none">
+        <button class="notif-btn" onclick="toggleNotifDropdown(event)" title="Notifications">
+          🔔
+          <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+        </button>
+        <div class="notif-dropdown" id="notif-dropdown" onmouseenter="markAllNotifsViewed()">
+          <div class="notif-dropdown-title">Notifications</div>
+          <div id="notif-list"></div>
+        </div>
+      </div>
       <div id="user-greeting"></div>
       <span style="font-size:.85rem">☀️</span>
       <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode"></button>
@@ -672,7 +721,7 @@
 
 <!-- Meaning picker modal -->
 <div class="modal-overlay" id="meaning-modal" onclick="closeModalOnBg(event,'meaning-modal')">
-  <div class="modal" style="max-width:480px">
+  <div class="modal" style="max-width:640px">
     <div class="modal-header">
       <div>
         <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700">Choose a meaning</div>
@@ -716,6 +765,10 @@ let pickerYear     = new Date().getFullYear();
 let pendingMonth   = null;  // month selected in picker for new submission
 let myViewMonth    = currentMonthStr(); // which month My Submissions tab is showing
 let monthPickerMode = 'new-sub'; // 'new-sub' | 'my-filter'
+let notifications      = [];
+let notifPollInterval  = null;
+let notifDropdownOpen  = false;
+let notifHoverMarked   = false;
 
 // ── Speech Synthesis Setup ─────────────────────────────────────────────
 // Voices load async. We keep a resolved list and a promise so everything
@@ -808,6 +861,8 @@ function showAuth() {
   document.getElementById('auth-panel').style.display = '';
   document.getElementById('main-panel').style.display = 'none';
   document.getElementById('user-greeting').innerHTML = '';
+  document.getElementById('notif-wrap').style.display = 'none';
+  if (notifPollInterval) { clearInterval(notifPollInterval); notifPollInterval = null; }
 }
 function toggleAuthMode() {
   isRegister = !isRegister;
@@ -858,9 +913,13 @@ async function submitAuth() {
 // ── Main ──────────────────────────────────────────────────────────────
 async function showMain() {
   refreshHeaderAvatar();
+  document.getElementById('notif-wrap').style.display = '';
   await fetch(API_BASE + '/api/ensure-slots', { method:'POST' }).catch(()=>{});
   await loadAll();
   renderMySubmissions();
+  await fetchNotifications();
+  if (notifPollInterval) clearInterval(notifPollInterval);
+  notifPollInterval = setInterval(fetchNotifications, 60000);
   hideLoader();
   document.getElementById('auth-panel').style.display = 'none';
   document.getElementById('main-panel').style.display = '';
@@ -883,6 +942,101 @@ function refreshHeaderAvatar() {
   `;
 }
 function signOut() { localStorage.removeItem('oem_user'); currentUser = null; showAuth(); }
+
+// ── Notifications ────────────────────────────────────────────────────
+async function fetchNotifications() {
+  if (!currentUser) return;
+  try {
+    const r = await fetch(API_BASE + '/api/notifications/' + currentUser._id);
+    notifications = r.ok ? await r.json() : [];
+  } catch(e) { notifications = []; }
+  renderNotifBadge();
+  if (notifDropdownOpen) renderNotifList();
+}
+
+function renderNotifBadge() {
+  const unread = notifications.filter(n => !n.viewedAt).length;
+  const badge = document.getElementById('notif-badge');
+  if (unread > 0) {
+    badge.textContent = unread > 9 ? '9+' : String(unread);
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function toggleNotifDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('notif-dropdown');
+  if (dd.classList.contains('open')) {
+    closeNotifDropdown();
+  } else {
+    notifDropdownOpen = true;
+    notifHoverMarked = false;
+    renderNotifList();
+    dd.classList.add('open');
+    document.addEventListener('click', handleOutsideNotifClick);
+  }
+}
+
+function closeNotifDropdown() {
+  notifDropdownOpen = false;
+  document.getElementById('notif-dropdown').classList.remove('open');
+  document.removeEventListener('click', handleOutsideNotifClick);
+}
+
+function handleOutsideNotifClick(e) {
+  const wrap = document.getElementById('notif-wrap');
+  if (wrap && !wrap.contains(e.target)) closeNotifDropdown();
+}
+
+const NOTIF_ICONS = { submission: '✍️', comment: '💬', deadline: '⏰' };
+
+function renderNotifList() {
+  const list = document.getElementById('notif-list');
+  if (!notifications.length) {
+    list.innerHTML = `<div class="notif-empty">🎉 You're all caught up!</div>`;
+    return;
+  }
+  list.innerHTML = notifications.map(n => `
+    <div class="notif-item ${!n.viewedAt ? 'unread' : ''}">
+      <div class="notif-icon">${NOTIF_ICONS[n.type] || '🔔'}</div>
+      <div class="notif-body">
+        <div class="notif-msg">${escHtml(n.message)}</div>
+        <div class="notif-time">${relativeTime(n.createdAt)}</div>
+      </div>
+      ${!n.viewedAt ? '<span class="notif-dot"></span>' : ''}
+    </div>
+  `).join('');
+}
+
+function relativeTime(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const min = Math.floor(diff / 60000), hr = Math.floor(diff / 3600000), day = Math.floor(diff / 86400000);
+  if (min < 1)  return 'just now';
+  if (min < 60) return `${min}m ago`;
+  if (hr < 24)  return `${hr}h ago`;
+  if (day < 30) return `${day}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+async function markAllNotifsViewed() {
+  if (notifHoverMarked) return;
+  notifHoverMarked = true;
+  if (!notifications.some(n => !n.viewedAt)) return; // nothing unread, skip the call
+
+  const now = new Date().toISOString();
+  notifications = notifications.map(n => n.viewedAt ? n : { ...n, viewedAt: now });
+  renderNotifBadge();
+  renderNotifList();
+
+  try {
+    await fetch(API_BASE + '/api/notifications/mark-viewed', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser._id })
+    });
+  } catch(e) {}
+}
 
 // ── Data ──────────────────────────────────────────────────────────────
 async function loadAll() {

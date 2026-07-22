@@ -47,9 +47,20 @@ const commentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const User       = mongoose.model('User',       userSchema);
-const Submission = mongoose.model('Submission', submissionSchema);
-const Comment    = mongoose.model('Comment',    commentSchema);
+const notificationSchema = new mongoose.Schema({
+  userId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  type:      { type: String, enum: ['submission', 'comment', 'deadline'], required: true },
+  message:   { type: String, required: true },
+  relatedId: { type: mongoose.Schema.Types.ObjectId, default: null },
+  meta:      { type: mongoose.Schema.Types.Mixed, default: {} }, // dedup keys, e.g. { month: '2026-07' }
+  createdAt: { type: Date, default: Date.now },
+  viewedAt:  { type: Date, default: null }
+});
+
+const User         = mongoose.model('User',         userSchema);
+const Submission   = mongoose.model('Submission',   submissionSchema);
+const Comment      = mongoose.model('Comment',      commentSchema);
+const Notification = mongoose.model('Notification', notificationSchema);
 
 // ── GitHub sync ──────────────────────────────────────────────────────
 async function syncToGitHub(data) {
@@ -152,6 +163,19 @@ async function sendEmail({ to, subject, html }) {
 function formatMonth(m) {
   const [y, mo] = m.split('-');
   return new Date(+y, +mo - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+// ── Notifications ──────────────────────────────────────────────────────
+// Broadcasts a notification to every approved user except the one who
+// triggered it (e.g. "someone else submitted an expression").
+async function notifyOtherUsers(excludeUserId, type, message, relatedId = null) {
+  try {
+    const users = await User.find({ _id: { $ne: excludeUserId }, status: 'approved' }).select('_id').lean();
+    if (!users.length) return;
+    await Notification.insertMany(
+      users.map(u => ({ userId: u._id, type, message, relatedId }))
+    );
+  } catch(err) { console.error('notifyOtherUsers failed:', err.message); }
 }
 
 function reminderHtml(username, month, appUrl) {
@@ -321,6 +345,46 @@ cron.schedule('0 9 1 * *', async () => {
   await sendAllPendingReminders(prevMonth);
 });
 
+// ── Cron: daily at 8:00am UTC ─────────────────────────────────────────
+// Notifies anyone with a pending submission once the current month has
+// 5 or fewer days left. Deduplicated per user+month so it only fires once.
+cron.schedule('0 8 * * *', async () => {
+  try {
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const remaining = daysInMonth - now.getDate() + 1; // inclusive of today
+    if (remaining > 5) return;
+
+    const month = now.toISOString().slice(0, 7);
+    const users = await User.find({ status: 'approved' }).lean();
+
+    for (const user of users) {
+      const sub = await Submission.findOne({ userId: user._id, month, expression: { $nin: ['', null] } });
+      if (sub) continue; // already submitted
+
+      const already = await Notification.findOne({ userId: user._id, type: 'deadline', 'meta.month': month });
+      if (already) continue; // already notified this month
+
+      await Notification.create({
+        userId:  user._id,
+        type:    'deadline',
+        message: `Only ${remaining} day${remaining !== 1 ? 's' : ''} left to submit your expression for ${formatMonth(month)}!`,
+        meta:    { month }
+      });
+    }
+  } catch(err) { console.error('Deadline notification cron failed:', err.message); }
+});
+
+// ── Cron: daily at 8:30am UTC ─────────────────────────────────────────
+// Permanently deletes notifications that were viewed more than 30 days ago.
+cron.schedule('30 8 * * *', async () => {
+  try {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const result = await Notification.deleteMany({ viewedAt: { $ne: null, $lt: cutoff } });
+    if (result.deletedCount) console.log(`Purged ${result.deletedCount} old notifications.`);
+  } catch(err) { console.error('Notification cleanup cron failed:', err.message); }
+});
+
 // ── Auth ─────────────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
   try {
@@ -475,6 +539,17 @@ app.post('/api/submissions', async (req, res) => {
     }
     const allSubs = await Submission.find().sort({ month: -1, username: 1 });
     await syncToGitHub(allSubs);
+
+    // Notify everyone else — but only for brand-new submissions, not edits
+    if (!editId && expression) {
+      notifyOtherUsers(
+        userId,
+        'submission',
+        `${username} submitted an expression for ${formatMonth(targetMonth)}`,
+        sub._id
+      );
+    }
+
     res.json(sub);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -589,6 +664,33 @@ app.delete('/api/submissions/:id', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Notifications ────────────────────────────────────────────────────
+// GET /api/notifications/:userId
+//   Returns unviewed notifications plus anything viewed within the last
+//   30 days. Older viewed notifications are hidden here and permanently
+//   purged by the daily cleanup cron.
+app.get('/api/notifications/:userId', async (req, res) => {
+  try {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const notifs = await Notification.find({
+      userId: req.params.userId,
+      $or: [{ viewedAt: null }, { viewedAt: { $gte: cutoff } }]
+    }).sort({ createdAt: -1 }).limit(50);
+    res.json(notifs);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/notifications/mark-viewed  { userId }
+//   Marks all currently-unviewed notifications for that user as viewed now.
+app.post('/api/notifications/mark-viewed', async (req, res) => {
+  try {
+    const { userId } = req.body || {};
+    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+    await Notification.updateMany({ userId, viewedAt: null }, { viewedAt: new Date() });
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── Comments ─────────────────────────────────────────────────────────
 app.get('/api/comments/:subId', async (req, res) => {
   try {
@@ -602,6 +704,20 @@ app.post('/api/comments', async (req, res) => {
     const { subId, text, username, parentId } = req.body;
     if (!subId || !text || !username) return res.status(400).json({ error: 'Missing fields' });
     const comment = await Comment.create({ subId, text, username, parentId: parentId || null });
+
+    // Notify the submission's owner, unless they're commenting on their own
+    try {
+      const sub = await Submission.findById(subId).lean();
+      if (sub && sub.username !== username) {
+        await Notification.create({
+          userId:    sub.userId,
+          type:      'comment',
+          message:   `${username} commented on your submission "${sub.expression}"`,
+          relatedId: sub._id
+        });
+      }
+    } catch(e) { console.error('Comment notification failed:', e.message); }
+
     res.json(comment);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });

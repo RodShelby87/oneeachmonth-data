@@ -1502,7 +1502,7 @@ function renderAllGrid() {
   grid.innerHTML = forMonth.map(s => {
     const isEmpty = !s.expression;
     const date = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
-    const commentCount = (comments[s._id] || []).length;
+    const commentCount = s.commentCount || 0;
     return `<div class="sub-card ${isEmpty?'empty':''}" ${!isEmpty ? `onclick="openCardModal('${s._id}')"` : ''}>
       <div class="card-user"><span class="dot"></span>${escHtml(s.username)}</div>
       <div class="card-expr">${isEmpty ? 'Not submitted yet' : `"${escHtml(s.expression)}"`}</div>
@@ -1796,6 +1796,9 @@ async function sendComment({ subId, text, username, parentId }) {
       body: JSON.stringify({ subId, text, username, parentId: parentId || null })
     });
     await loadComments(subId);
+    // Keep the grid card's comment count in sync immediately, without a full reload
+    const sub = allSubmissions.find(s => s._id === subId);
+    if (sub) sub.commentCount = (comments[subId] || []).length;
     renderAllGrid();
   } catch(e) {}
 }

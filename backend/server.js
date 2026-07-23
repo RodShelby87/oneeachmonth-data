@@ -167,11 +167,13 @@ function formatMonth(m) {
 }
 
 // ── Notifications ──────────────────────────────────────────────────────
-// Broadcasts a notification to every approved user except the one who
-// triggered it (e.g. "someone else submitted an expression").
-async function notifyOtherUsers(excludeUserId, type, message, relatedId = null) {
+// Broadcasts a notification to every approved user except the one(s)
+// passed in excludeUserIds (e.g. "someone else submitted an expression").
+// Accepts a single id or an array of ids to exclude.
+async function notifyOtherUsers(excludeUserIds, type, message, relatedId = null) {
   try {
-    const users = await User.find({ _id: { $ne: excludeUserId }, status: 'approved' }).select('_id').lean();
+    const excludeArr = (Array.isArray(excludeUserIds) ? excludeUserIds : [excludeUserIds]).filter(Boolean);
+    const users = await User.find({ _id: { $nin: excludeArr }, status: 'approved' }).select('_id').lean();
     if (!users.length) return;
     await Notification.insertMany(
       users.map(u => ({ userId: u._id, type, message, relatedId }))
@@ -508,8 +510,19 @@ app.delete('/api/users/:id', async (req, res) => {
 // ── Submissions ──────────────────────────────────────────────────────
 app.get('/api/submissions', async (req, res) => {
   try {
-    const subs = await Submission.find().sort({ month: -1, username: 1 });
-    res.json(subs);
+    const subs = await Submission.find().sort({ month: -1, username: 1 }).lean();
+
+    // Attach a real comment count to each submission — previously the
+    // frontend only knew a submission's comment count after opening its
+    // modal, so any card never opened always showed 0.
+    const counts = await Comment.aggregate([
+      { $group: { _id: '$subId', count: { $sum: 1 } } }
+    ]);
+    const countMap = {};
+    counts.forEach(c => { countMap[String(c._id)] = c.count; });
+
+    const withCounts = subs.map(s => ({ ...s, commentCount: countMap[String(s._id)] || 0 }));
+    res.json(withCounts);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -706,16 +719,30 @@ app.post('/api/comments', async (req, res) => {
     if (!subId || !text || !username) return res.status(400).json({ error: 'Missing fields' });
     const comment = await Comment.create({ subId, text, username, parentId: parentId || null });
 
-    // Notify the submission's owner, unless they're commenting on their own
     try {
       const sub = await Submission.findById(subId).lean();
-      if (sub && sub.username !== username) {
-        await Notification.create({
-          userId:    sub.userId,
-          type:      'comment',
-          message:   `${username} commented on your submission "${sub.expression}"`,
-          relatedId: sub._id
-        });
+      if (sub) {
+        const commenter = await User.findOne({ username }).select('_id').lean();
+
+        // Notify the submission's owner specifically, unless they're commenting on their own
+        if (sub.username !== username) {
+          await Notification.create({
+            userId:    sub.userId,
+            type:      'comment',
+            message:   `${username} commented on your submission "${sub.expression}"`,
+            relatedId: sub._id
+          });
+        }
+
+        // Also let everyone else know a comment happened, even on submissions
+        // that aren't theirs — excludes the commenter and the owner (who
+        // already got the more specific message above).
+        await notifyOtherUsers(
+          [commenter?._id, sub.userId],
+          'comment',
+          `${username} commented on ${sub.username}'s submission "${sub.expression}"`,
+          sub._id
+        );
       }
     } catch(e) { console.error('Comment notification failed:', e.message); }
 

@@ -976,6 +976,7 @@ function toggleNotifDropdown(e) {
     renderNotifList();
     dd.classList.add('open');
     document.addEventListener('click', handleOutsideNotifClick);
+    fetchNotifications(); // refresh from server each time it's opened
   }
 }
 
@@ -990,7 +991,7 @@ function handleOutsideNotifClick(e) {
   if (wrap && !wrap.contains(e.target)) closeNotifDropdown();
 }
 
-const NOTIF_ICONS = { submission: '✍️', comment: '💬', deadline: '⏰' };
+const NOTIF_ICONS = { submission: '✍️', comment: '💬', deadline: '⏰', admin_approval: '🆕' };
 
 function renderNotifList() {
   const list = document.getElementById('notif-list');
@@ -998,16 +999,25 @@ function renderNotifList() {
     list.innerHTML = `<div class="notif-empty">🎉 You're all caught up!</div>`;
     return;
   }
-  list.innerHTML = notifications.map(n => `
+  list.innerHTML = notifications.map(n => {
+    const icon = NOTIF_ICONS[n.type] || '🔔';
+    const isApproval = n.type === 'admin_approval' && n.meta && n.meta.approveUrl;
+    return `
     <div class="notif-item ${!n.viewedAt ? 'unread' : ''}">
-      <div class="notif-icon">${NOTIF_ICONS[n.type] || '🔔'}</div>
+      <div class="notif-icon">${icon}</div>
       <div class="notif-body">
         <div class="notif-msg">${escHtml(n.message)}</div>
         <div class="notif-time">${relativeTime(n.createdAt)}</div>
+        ${isApproval ? `
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <a href="${n.meta.approveUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-xs" style="text-decoration:none">✓ Approve</a>
+          <a href="${n.meta.rejectUrl}" target="_blank" rel="noopener" class="btn btn-outline btn-xs" style="text-decoration:none;color:var(--danger);border-color:var(--danger)">✕ Reject</a>
+        </div>` : ''}
       </div>
       ${!n.viewedAt ? '<span class="notif-dot"></span>' : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function relativeTime(dateStr) {

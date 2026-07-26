@@ -50,7 +50,7 @@ const commentSchema = new mongoose.Schema({
 
 const notificationSchema = new mongoose.Schema({
   userId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  type:      { type: String, enum: ['submission', 'comment', 'deadline'], required: true },
+  type:      { type: String, enum: ['submission', 'comment', 'deadline', 'admin_approval'], required: true },
   message:   { type: String, required: true },
   relatedId: { type: mongoose.Schema.Types.ObjectId, default: null },
   meta:      { type: mongoose.Schema.Types.Mixed, default: {} }, // dedup keys, e.g. { month: '2026-07' }
@@ -246,6 +246,32 @@ async function sendAdminApprovalEmail(user) {
   console.log(`Admin approval email sent for ${user.username}`);
 }
 
+// The site's owner is identified by matching their account email to
+// GMAIL_USER — the same address that receives the approval emails.
+async function getAdminUserId() {
+  if (!process.env.GMAIL_USER) return null;
+  const admin = await User.findOne({ email: process.env.GMAIL_USER }).select('_id').lean();
+  return admin ? admin._id : null;
+}
+
+// Creates an in-app notification, visible only to the admin, with the
+// same signed approve/reject links used in the email.
+async function createAdminApprovalNotification(user) {
+  const adminId = await getAdminUserId();
+  if (!adminId) { console.log('No admin account found matching GMAIL_USER — skipping in-app notification.'); return; }
+
+  const approveUrl = `${BACKEND_URL}/api/admin/approve-user?id=${user._id}&token=${approvalToken(user._id, 'approve')}`;
+  const rejectUrl  = `${BACKEND_URL}/api/admin/reject-user?id=${user._id}&token=${approvalToken(user._id, 'reject')}`;
+
+  await Notification.create({
+    userId:    adminId,
+    type:      'admin_approval',
+    message:   `${user.username} (${user.email}) wants to join OneEachMonth`,
+    relatedId: user._id,
+    meta:      { username: user.username, email: user.email, approveUrl, rejectUrl }
+  });
+}
+
 // Renders a plain confirmation page — this is what the admin sees after
 // clicking Approve/Reject in the email (a link click, not an API call).
 function approvalResultPage(title, msg, color) {
@@ -400,6 +426,7 @@ app.post('/api/register', async (req, res) => {
 
     // Fire-and-forget — don't block registration if the email fails
     sendAdminApprovalEmail(user).catch(err => console.error('Admin approval email failed:', err.message));
+    createAdminApprovalNotification(user).catch(err => console.error('Admin in-app notification failed:', err.message));
 
     res.json({
       pending: true,
@@ -453,6 +480,9 @@ async function handleApprovalAction(req, res, newStatus) {
       // Clean up their empty placeholder submission slot
       await Submission.deleteMany({ userId: user._id, expression: '' });
     }
+
+    // The approval notification's buttons are now dead — remove it
+    await Notification.deleteMany({ type: 'admin_approval', relatedId: user._id });
 
     return res.send(approvalResultPage(
       newStatus === 'approved' ? 'User approved ✓' : 'User rejected',

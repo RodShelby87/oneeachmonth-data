@@ -550,7 +550,7 @@
 </div>
 
 <!-- Card detail modal -->
-<div class="modal-overlay" id="card-modal" onclick="closeModalOnBg(event,'card-modal')">
+<div class="modal-overlay" id="card-modal">
   <div class="modal">
     <div class="modal-header">
       <div style="flex:1">
@@ -582,7 +582,7 @@
 </div>
 
 <!-- New submission modal -->
-<div class="modal-overlay" id="new-sub-modal" onclick="closeModalOnBg(event,'new-sub-modal')">
+<div class="modal-overlay" id="new-sub-modal">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
       <div>
@@ -619,7 +619,7 @@
 </div>
 
 <!-- Month picker modal (shared: for new submission AND my-month filter) -->
-<div class="modal-overlay" id="month-modal" onclick="closeModalOnBg(event,'month-modal')">
+<div class="modal-overlay" id="month-modal">
   <div class="modal">
     <div class="modal-header">
       <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700" id="month-modal-title">Pick a month</div>
@@ -637,7 +637,7 @@
 </div>
 
 <!-- Pending users detail modal -->
-<div class="modal-overlay" id="pending-modal" onclick="closeModalOnBg(event,'pending-modal')">
+<div class="modal-overlay" id="pending-modal">
   <div class="modal" style="max-width:480px">
     <div class="modal-header">
       <div>
@@ -659,7 +659,7 @@
 </div>
 
 <!-- Profile modal -->
-<div class="modal-overlay" id="profile-modal" onclick="closeModalOnBg(event,'profile-modal')">
+<div class="modal-overlay" id="profile-modal">
   <div class="modal" style="max-width:520px">
     <div class="modal-header">
       <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700">Your Profile</div>
@@ -720,7 +720,7 @@
 </div>
 
 <!-- Meaning picker modal -->
-<div class="modal-overlay" id="meaning-modal" onclick="closeModalOnBg(event,'meaning-modal')">
+<div class="modal-overlay" id="meaning-modal">
   <div class="modal" style="max-width:640px">
     <div class="modal-header">
       <div>
@@ -1843,7 +1843,7 @@ function closeModal(id) {
     if (btn) { btn.textContent = '🔊'; btn.classList.remove('speaking'); }
   }
 }
-function closeModalOnBg(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
 
 // ── Tabs ──────────────────────────────────────────────────────────────
 function switchTab(name, btn) {

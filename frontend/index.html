@@ -528,6 +528,9 @@
           <button class="month-pill-btn" id="my-month-pill-btn" onclick="openMyMonthPicker()">
             📅 <span id="current-month-label"></span> ▾
           </button>
+          <button class="btn btn-outline btn-xs" id="go-current-month-btn" onclick="goToCurrentMonth()" style="margin-left:6px;vertical-align:top">
+            Current Month
+          </button>
           <div class="section-title">My Submissions <span class="badge" id="my-status-badge"></span></div>
         </div>
         <div class="section-actions">
@@ -592,8 +595,9 @@
       <button class="modal-close" onclick="closeModal('new-sub-modal')">✕</button>
     </div>
     <div class="modal-body">
-      <div style="font-size:0.8rem;color:var(--ink-faint);margin-bottom:16px;display:flex;align-items:center;gap:6px">
+      <div style="font-size:0.8rem;color:var(--ink-faint);margin-bottom:16px;display:flex;align-items:center;gap:8px">
         📅 <span id="ns-month-display" style="font-weight:600;color:var(--ink-soft)"></span>
+        <button id="ns-change-month-btn" class="btn btn-outline btn-xs" onclick="openEditMonthPicker()" style="display:none">Change</button>
       </div>
       <div id="ns-future-notice" style="display:none;background:var(--gold-bg);border:1px solid var(--gold);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-size:0.82rem;color:var(--gold);line-height:1.5">
         🔮 <strong>Heads up:</strong> this is a future month. Your expression will be saved but <strong>won't appear in All Expressions</strong> until that month arrives.
@@ -1157,6 +1161,9 @@ function editSub(id) {
   document.getElementById('ns-comment').value = sub.userComment|| '';
   document.getElementById('ns-error').textContent = '';
   document.getElementById('new-sub-modal').dataset.editId = id;
+  document.getElementById('ns-change-month-btn').style.display = '';
+  const isFuture = sub.month > currentMonthStr();
+  document.getElementById('ns-future-notice').style.display = isFuture ? '' : 'none';
   openModal('new-sub-modal');
 }
 
@@ -1207,6 +1214,11 @@ function pickMyMonth(m) {
   renderMySubmissions();
 }
 
+function goToCurrentMonth() {
+  myViewMonth = currentMonthStr();
+  renderMySubmissions();
+}
+
 // ── New Submission modal ──────────────────────────────────────────────
 function openNewSubmission() {
   // Always submit to the currently viewed month
@@ -1219,6 +1231,7 @@ function openNewSubmission() {
   document.getElementById('ns-comment').value = '';
   document.getElementById('ns-error').textContent = '';
   document.getElementById('new-sub-modal').dataset.editId = '';
+  document.getElementById('ns-change-month-btn').style.display = 'none';
   // Show notice if submitting for a future month
   const isFuture = pendingMonth > currentMonthStr();
   document.getElementById('ns-future-notice').style.display = isFuture ? '' : 'none';
@@ -1352,46 +1365,55 @@ async function confirmMeaningChoice() {
   }
 }
 
-// ── Month picker (new-sub flow) ────────────────────────────────────────
-function openMonthPicker() {
-  monthPickerMode = 'new-sub';
-  pickerYear = new Date().getFullYear();
-  document.getElementById('month-modal-title').textContent = 'Pick a month';
-  renderMonthPickerGrid();
-  openModal('month-modal');
-}
-
+// ── Month picker for editing an existing submission's month ───────────
 function changePickerYear(delta) {
   pickerYear += delta;
   if (monthPickerMode === 'my-filter') {
     renderMyMonthPickerGrid();
-  } else {
-    renderMonthPickerGrid();
+  } else if (monthPickerMode === 'edit-sub') {
+    renderEditMonthPickerGrid();
   }
 }
 
-function renderMonthPickerGrid() {
+function openEditMonthPicker() {
+  const editId = document.getElementById('new-sub-modal').dataset.editId;
+  if (!editId) return;
+  monthPickerMode = 'edit-sub';
+  pickerYear = parseInt(pendingMonth.split('-')[0]);
+  document.getElementById('month-modal-title').textContent = 'Change month';
+  closeModal('new-sub-modal');
+  renderEditMonthPickerGrid();
+  openModal('month-modal');
+}
+
+function renderEditMonthPickerGrid() {
   document.getElementById('picker-year').textContent = pickerYear;
+  const editId = document.getElementById('new-sub-modal').dataset.editId;
+  // A month is "taken" only if a DIFFERENT submission of mine already fills it —
+  // the submission currently being edited never blocks its own month.
   const myMonths = new Set(
-    allSubmissions.filter(s => s.userId === currentUser._id && s.expression).map(s => s.month)
+    allSubmissions
+      .filter(s => s.userId === currentUser._id && s.expression && s._id !== editId)
+      .map(s => s.month)
   );
   document.getElementById('month-picker-grid').innerHTML = MONTHS_SHORT.map((name, i) => {
     const m = `${pickerYear}-${String(i+1).padStart(2,'0')}`;
     const taken = myMonths.has(m);
-    return `<button class="month-pick-btn ${taken ? 'taken' : ''}" onclick="${taken ? '' : `pickMonth('${m}')`}" ${taken ? 'title="Already submitted"' : ''}>${name}</button>`;
+    const isCurrentSelection = m === pendingMonth;
+    return `<button
+      class="month-pick-btn ${taken ? 'taken' : ''} ${isCurrentSelection ? 'current-selection' : ''}"
+      onclick="${taken ? '' : `pickEditMonth('${m}')`}"
+      title="${taken ? 'Already submitted' : ''}"
+    >${name}</button>`;
   }).join('');
 }
 
-function pickMonth(m) {
+function pickEditMonth(m) {
   pendingMonth = m;
   closeModal('month-modal');
-  document.getElementById('new-sub-title').textContent = 'New Expression';
   document.getElementById('ns-month-display').textContent = formatMonth(m);
-  document.getElementById('ns-expr').value = '';
-  document.getElementById('ns-link').value = '';
-  document.getElementById('ns-comment').value = '';
-  document.getElementById('ns-error').textContent = '';
-  document.getElementById('new-sub-modal').dataset.editId = '';
+  const isFuture = m > currentMonthStr();
+  document.getElementById('ns-future-notice').style.display = isFuture ? '' : 'none';
   openModal('new-sub-modal');
 }
 

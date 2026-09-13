@@ -1,5 +1,18 @@
 [
   {
+    "_id": "6aa728dd51bd964b2f4c2f73",
+    "expression": "Fool me once, shame on you. Fool me twice, shame on me",
+    "month": "2026-10",
+    "userId": "6a5795428ed29f665d55433e",
+    "__v": 0,
+    "definition": "",
+    "example": "",
+    "link": "https://www.youtube.com/watch?v=qYA2goBuuCQ",
+    "submittedAt": "2026-09-13T22:51:09.698Z",
+    "userComment": "I think Michael needs to learn the expression better",
+    "username": "Rodri"
+  },
+  {
     "_id": "6a96ecd0e5505bf279bc26d4",
     "userId": "6a5c03d70759e204171030c3",
     "username": "Alanheck22",

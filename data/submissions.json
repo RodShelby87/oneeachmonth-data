@@ -1,15 +1,15 @@
 [
   {
-    "_id": "6aa728dd51bd964b2f4c2f73",
-    "expression": "Fool me once, shame on you. Fool me twice, shame on me",
-    "month": "2026-10",
+    "_id": "6ab32c1651bd964b2f52dc18",
+    "expression": "birds of a feather flock together",
+    "month": "2026-11",
     "userId": "6a5795428ed29f665d55433e",
     "__v": 0,
-    "definition": "",
+    "definition": "of the same kind or nature : very much alike —usually used in the phrase birds of a feather",
     "example": "",
-    "link": "https://www.youtube.com/watch?v=qYA2goBuuCQ",
-    "submittedAt": "2026-09-13T22:52:12.458Z",
-    "userComment": "I think Michael needs to learn the expression better\n\nThe first time someone tricks or betrays you, they are the ones who should feel guilty because they broke your trust.\nIf you allow that same person to trick you again in the exact same way, you share the blame for not learning from the first experience and failing to protect yourself.",
+    "link": "https://www.youtube.com/shorts/BmNfbZH7VoI",
+    "submittedAt": "2026-09-23T01:32:06.710Z",
+    "userComment": "",
     "username": "Rodri"
   },
   {
@@ -23,6 +23,19 @@
     "link": "https://www.youtube.com/shorts/01SyJbdUQ1s",
     "submittedAt": "2026-09-23T01:27:14.538Z",
     "userComment": "",
+    "username": "Rodri"
+  },
+  {
+    "_id": "6aa728dd51bd964b2f4c2f73",
+    "expression": "Fool me once, shame on you. Fool me twice, shame on me",
+    "month": "2026-10",
+    "userId": "6a5795428ed29f665d55433e",
+    "__v": 0,
+    "definition": "",
+    "example": "",
+    "link": "https://www.youtube.com/watch?v=qYA2goBuuCQ",
+    "submittedAt": "2026-09-13T22:52:12.458Z",
+    "userComment": "I think Michael needs to learn the expression better\n\nThe first time someone tricks or betrays you, they are the ones who should feel guilty because they broke your trust.\nIf you allow that same person to trick you again in the exact same way, you share the blame for not learning from the first experience and failing to protect yourself.",
     "username": "Rodri"
   },
   {
@@ -78,19 +91,6 @@
     "submittedAt": "2026-08-11T14:27:41.160Z"
   },
   {
-    "_id": "6a6931689112c2d951ce33e8",
-    "month": "2026-08",
-    "expression": "open a can of worms",
-    "userId": "6a5795428ed29f665d55433e",
-    "__v": 0,
-    "definition": "to create a complicated situation in which doing something to correct a problem leads to many more problems",
-    "example": "",
-    "link": "https://www.instagram.com/reel/C3nP1gfizhM/?igsh=MTlzMno3dno3Y3Q0NQ==",
-    "submittedAt": "2026-07-28T22:47:04.584Z",
-    "userComment": "",
-    "username": "Rodri"
-  },
-  {
     "_id": "6a693b129112c2d951ce3bd9",
     "month": "2026-08",
     "userId": "6a5795428ed29f665d55433e",
@@ -101,6 +101,19 @@
     "link": "https://www.youtube.com/watch?v=kWfpHZIHDf4",
     "submittedAt": "2026-07-28T23:29:09.432Z",
     "userComment": "no excuses, no arguments, and no rule-breaking allowed",
+    "username": "Rodri"
+  },
+  {
+    "_id": "6a6931689112c2d951ce33e8",
+    "month": "2026-08",
+    "expression": "open a can of worms",
+    "userId": "6a5795428ed29f665d55433e",
+    "__v": 0,
+    "definition": "to create a complicated situation in which doing something to correct a problem leads to many more problems",
+    "example": "",
+    "link": "https://www.instagram.com/reel/C3nP1gfizhM/?igsh=MTlzMno3dno3Y3Q0NQ==",
+    "submittedAt": "2026-07-28T22:47:04.584Z",
+    "userComment": "",
     "username": "Rodri"
   },
   {

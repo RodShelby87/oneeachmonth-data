@@ -13,6 +13,19 @@
     "username": "Rodri"
   },
   {
+    "_id": "6ac90782eb09be93cbc51073",
+    "userId": "6a5c03d70759e204171030c3",
+    "username": "Alanheck22",
+    "month": "2026-10",
+    "expression": "Don't sweat it",
+    "definition": "",
+    "example": "",
+    "link": "https://youtu.be/jiSHeYkGQfg?si=66MiAD5E7FHBcJ69",
+    "userComment": "",
+    "__v": 0,
+    "submittedAt": "2026-10-09T15:27:06.752Z"
+  },
+  {
     "_id": "6ab32af251bd964b2f52db67",
     "expression": "to take a leak",
     "month": "2026-10",
@@ -37,6 +50,18 @@
     "submittedAt": "2026-09-13T22:52:12.458Z",
     "userComment": "I think Michael needs to learn the expression better\n\nThe first time someone tricks or betrays you, they are the ones who should feel guilty because they broke your trust.\nIf you allow that same person to trick you again in the exact same way, you share the blame for not learning from the first experience and failing to protect yourself.",
     "username": "Rodri"
+  },
+  {
+    "_id": "6ac90783eb09be93cbc51076",
+    "userId": "6a5ff554f3faaaf8ee3ba727",
+    "username": "bel",
+    "month": "2026-10",
+    "expression": "",
+    "definition": "",
+    "example": "",
+    "link": "",
+    "userComment": "",
+    "__v": 0
   },
   {
     "_id": "6a96ecd0e5505bf279bc26d4",
@@ -91,19 +116,6 @@
     "submittedAt": "2026-08-11T14:27:41.160Z"
   },
   {
-    "_id": "6a693b129112c2d951ce3bd9",
-    "month": "2026-08",
-    "userId": "6a5795428ed29f665d55433e",
-    "expression": "no cuts, no buts, no coconuts",
-    "__v": 0,
-    "definition": "",
-    "example": "",
-    "link": "https://www.youtube.com/watch?v=kWfpHZIHDf4",
-    "submittedAt": "2026-07-28T23:29:09.432Z",
-    "userComment": "no excuses, no arguments, and no rule-breaking allowed",
-    "username": "Rodri"
-  },
-  {
     "_id": "6a6931689112c2d951ce33e8",
     "month": "2026-08",
     "expression": "open a can of worms",
@@ -114,6 +126,19 @@
     "link": "https://www.instagram.com/reel/C3nP1gfizhM/?igsh=MTlzMno3dno3Y3Q0NQ==",
     "submittedAt": "2026-07-28T22:47:04.584Z",
     "userComment": "",
+    "username": "Rodri"
+  },
+  {
+    "_id": "6a693b129112c2d951ce3bd9",
+    "month": "2026-08",
+    "userId": "6a5795428ed29f665d55433e",
+    "expression": "no cuts, no buts, no coconuts",
+    "__v": 0,
+    "definition": "",
+    "example": "",
+    "link": "https://www.youtube.com/watch?v=kWfpHZIHDf4",
+    "submittedAt": "2026-07-28T23:29:09.432Z",
+    "userComment": "no excuses, no arguments, and no rule-breaking allowed",
     "username": "Rodri"
   },
   {

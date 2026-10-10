@@ -438,13 +438,32 @@
   .meaning-option.empty-option { border-style: dashed; }
   .meaning-option.empty-option .meaning-option-text { color: var(--ink-soft); font-style: italic; }
 
+  /* ── Glossary ────────────────────────────────────────────── */
+  .gloss-search { position: relative; margin-bottom: 14px; }
+  .gloss-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: .95rem; pointer-events: none; opacity: .6; }
+  .gloss-search input { padding-left: 40px; padding-right: 38px; }
+  .gloss-search-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--ink-faint); font-size: 1rem; padding: 4px 8px; display: none; }
+  .gloss-search-clear:hover { color: var(--ink); }
+  #gloss-note { font-size: .8rem; color: var(--ink-soft); margin-bottom: 12px; }
+  #gloss-note:empty { display: none; }
+  #gloss-list { display: flex; flex-direction: column; gap: 8px; }
+  .gloss-item { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 12px 16px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+  .gloss-item:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
+  .gloss-expr { font-family: 'Fraunces', serif; font-style: italic; font-weight: 600; font-size: 1rem; color: var(--ink); line-height: 1.35; }
+  .gloss-by { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent2); white-space: nowrap; }
+  .gloss-hover { position: absolute; top: calc(100% + 6px); left: 16px; width: min(340px, calc(100% - 32px)); background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: var(--shadow-md); padding: 12px 16px; z-index: 60; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity .15s, transform .15s; }
+  .gloss-item:hover .gloss-hover { opacity: 1; transform: translateY(0); transition-delay: .2s; }
+  .gloss-hover p { font-size: .84rem; color: var(--ink-soft); line-height: 1.55; white-space: pre-line; }
+  .gloss-empty { text-align: center; padding: 40px 20px; color: var(--ink-soft); font-size: .9rem; line-height: 1.6; }
+  @media (hover: none) { .gloss-hover { display: none; } }
+
   @media (max-width: 520px) {
     header { flex-direction: column; align-items: flex-start; }
     .header-right { width: 100%; justify-content: space-between; }
     .auth-card { padding: 28px 20px; }
     #all-submissions { grid-template-columns: 1fr; }
     .tabs { width: 100%; }
-    .tab-btn { flex: 1; text-align: center; }
+    .tab-btn { flex: 1; text-align: center; padding: 9px 8px; }
     .modal { max-height: 95vh; }
     .modal-body { padding: 14px 16px 20px; }
     .modal-header { padding: 16px 16px 12px; }
@@ -518,6 +537,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('submit',this)">✍️ My Submissions</button>
       <button class="tab-btn" onclick="switchTab('all',this)">🌍 All Expressions</button>
+      <button class="tab-btn" onclick="switchTab('glossary',this)">📚 Glossary</button>
     </div>
 
     <!-- My Submissions tab -->
@@ -548,6 +568,23 @@
         Expressions <span class="badge badge-neutral" id="all-count-badge"></span>
       </div>
       <div id="all-submissions"></div>
+    </div>
+
+    <!-- Glossary tab -->
+    <div class="tab-pane" id="tab-glossary">
+      <div class="section-header">
+        <div class="section-title">Glossary <span class="badge badge-neutral" id="gloss-count-badge"></span></div>
+        <div class="section-actions">
+          <button class="btn btn-accent2 btn-sm" onclick="openGlossaryForm()">✨ Add expression</button>
+        </div>
+      </div>
+      <div class="gloss-search">
+        <span class="gloss-search-icon">🔍</span>
+        <input id="gloss-search" type="text" placeholder="Search expressions, meanings, comments…" oninput="renderGlossary()" autocomplete="off" />
+        <button class="gloss-search-clear" id="gloss-search-clear" onclick="clearGlossarySearch()" aria-label="Clear search">✕</button>
+      </div>
+      <div id="gloss-note"></div>
+      <div id="gloss-list"></div>
     </div>
   </div>
 </div>
@@ -723,6 +760,37 @@
   </div>
 </div>
 
+<!-- Glossary add/edit modal -->
+<div class="modal-overlay" id="glossary-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700" id="gl-title">Add to Glossary</div>
+        <div style="font-size:0.82rem;color:var(--ink-soft);margin-top:2px">This one only shows up in the Glossary</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('glossary-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Expression</label>
+        <input id="gl-expr" type="text" placeholder="Type your expression…" />
+      </div>
+      <div class="form-group">
+        <label>Link <span class="label-opt">(optional — link to where you found it)</span></label>
+        <input id="gl-link" type="url" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label>Comment <span class="label-opt">(optional)</span></label>
+        <textarea id="gl-comment" placeholder="Anything you want to say about this expression…" rows="2"></textarea>
+      </div>
+      <div id="gl-error" class="error-msg"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="submitGlossaryForm()">
+        ✨ Save expression
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Meaning picker modal -->
 <div class="modal-overlay" id="meaning-modal">
   <div class="modal" style="max-width:640px">
@@ -764,7 +832,7 @@ let comments       = {};  // keyed by submissionId
 let selectedMonth  = null;
 let selectedYear   = null;
 let isRegister     = true;
-let activeSubId    = null;  // for comment modal
+let activeSubId    = null;  // for comment modal (submission id OR glossary entry id)
 let pickerYear     = new Date().getFullYear();
 let pendingMonth   = null;  // month selected in picker for new submission
 let myViewMonth    = currentMonthStr(); // which month My Submissions tab is showing
@@ -773,6 +841,8 @@ let notifications      = [];
 let notifPollInterval  = null;
 let notifDropdownOpen  = false;
 let notifHoverMarked   = false;
+let glossaryCustom     = [];  // entries that only live in the Glossary tab
+let glossaryEditId     = '';  // id being edited in the glossary form ('' = new)
 
 // ── Speech Synthesis Setup ─────────────────────────────────────────────
 // Voices load async. We keep a resolved list and a promise so everything
@@ -920,6 +990,7 @@ async function showMain() {
   document.getElementById('notif-wrap').style.display = '';
   await fetch(API_BASE + '/api/ensure-slots', { method:'POST' }).catch(()=>{});
   await loadAll();
+  await loadGlossary();
   renderMySubmissions();
   await fetchNotifications();
   if (notifPollInterval) clearInterval(notifPollInterval);
@@ -1257,6 +1328,7 @@ async function saveNewSubmission() {
 }
 
 // ── Meaning picker ───────────────────────────────────────────────────
+// Shared by regular submissions AND Glossary entries (payload.glossary = true)
 let pendingSubmissionPayload = null;
 let meaningOptions = [];
 let selectedMeaning = undefined; // index into meaningOptions, or 'empty'
@@ -1339,6 +1411,10 @@ async function confirmMeaningChoice() {
   pendingSubmissionPayload = null;
 
   closeModal('meaning-modal');
+
+  // Glossary-only entries take a different save path
+  if (payload.glossary) { await saveGlossaryEntry(payload, definition); return; }
+
   showToast('Saving expression…', 'loading');
 
   try {
@@ -1829,6 +1905,7 @@ async function sendComment({ subId, text, username, parentId }) {
     });
     await loadComments(subId);
     // Keep the grid card's comment count in sync immediately, without a full reload
+    // (glossary-only entries aren't in allSubmissions, so this is simply skipped for them)
     const sub = allSubmissions.find(s => s._id === subId);
     if (sub) sub.commentCount = (comments[subId] || []).length;
     renderAllGrid();
@@ -1837,7 +1914,7 @@ async function sendComment({ subId, text, username, parentId }) {
 
 // ── Dictionary ────────────────────────────────────────────────────────
 async function lookupExpression(expr) {
-  const words = expr.replace(/["""'']/g,'').split(/\s+/).filter(w=>w.length>3);
+  const words = expr.replace(/["“”'‘’]/g,'').split(/\s+/).filter(w=>w.length>3);
   const keyword = words[0] || expr;
   try {
     const r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(keyword)}`);
@@ -1873,6 +1950,7 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'glossary') renderGlossary(); // always show the latest submissions
 }
 
 function openProfileModal() {
@@ -1884,7 +1962,8 @@ function openProfileModal() {
 let activeTtsBtn = null;
 
 async function speakExpressionById(subId, btn) {
-  const sub = allSubmissions.find(s => s._id === subId);
+  // Works for regular submissions AND glossary-only entries
+  const sub = allSubmissions.find(s => s._id === subId) || glossaryCustom.find(g => g._id === subId);
   if (!sub || !sub.expression) return;
 
   // Toggle off if same button is speaking
@@ -1956,6 +2035,231 @@ async function speakExpressionById(subId, btn) {
     btn.classList.remove('speaking');
     if (activeTtsBtn === btn) activeTtsBtn = null;
   };
+}
+
+// ── Glossary ──────────────────────────────────────────────────────────
+// The Glossary lists every visible submission (month <= current month)
+// plus glossary-only entries, searchable and without any month grouping.
+
+async function loadGlossary() {
+  try {
+    const r = await fetch(API_BASE + '/api/glossary');
+    glossaryCustom = r.ok ? await r.json() : [];
+  } catch(e) { glossaryCustom = []; }
+  renderGlossary();
+}
+
+// Lowercase, no accents, no apostrophes, punctuation → spaces
+function gNorm(s) {
+  return String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/['’`]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// Levenshtein distance — used for typo tolerance
+function gLev(a, b) {
+  const m = a.length, n = b.length;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+function glossaryItems() {
+  const thisMonth = currentMonthStr();
+  const fromSubs = allSubmissions
+    .filter(s => s.expression && s.month <= thisMonth)
+    .map(s => ({ kind: 'sub', id: s._id, expression: s.expression, definition: s.definition || '', comment: s.userComment || '', username: s.username }));
+  const custom = glossaryCustom
+    .map(g => ({ kind: 'gl', id: g._id, expression: g.expression, definition: g.definition || '', comment: g.userComment || '', username: g.username }));
+  return [...fromSubs, ...custom].map(it => {
+    const exprN = gNorm(it.expression);
+    return {
+      ...it,
+      display:   it.expression.replace(/^["“”\s]+|["“”\s]+$/g, ''),
+      exprN,
+      exprWords: exprN.split(' ').filter(Boolean),
+      restN:     gNorm(it.definition + ' ' + it.comment),
+      sortKey:   exprN
+    };
+  });
+}
+
+// Score one search word against one item (0 = no match)
+function gScoreToken(item, t) {
+  if (item.exprN.includes(t)) return item.exprWords.some(w => w.startsWith(t)) ? 4 : 3; // anywhere in the expression
+  if (t.length >= 4) {
+    const maxD = t.length >= 7 ? 2 : 1;
+    if (item.exprWords.some(w => Math.abs(w.length - t.length) <= maxD && gLev(w, t) <= maxD)) return 2; // typo-tolerant
+  }
+  if (item.restN.includes(t)) return 1; // found in the meaning / comment
+  return 0;
+}
+
+function renderGlossary() {
+  const listEl = document.getElementById('gloss-list');
+  if (!listEl) return;
+  const q = document.getElementById('gloss-search').value;
+  const tokens = gNorm(q).split(' ').filter(Boolean);
+  document.getElementById('gloss-search-clear').style.display = q ? 'block' : 'none';
+
+  const all = glossaryItems();
+  let shown, note = '';
+
+  if (tokens.length) {
+    const scored = all.map(it => {
+      const sc = tokens.map(t => gScoreToken(it, t));
+      return { it, total: sc.reduce((a, b) => a + b, 0), hit: sc.filter(x => x > 0).length };
+    });
+    let matches = scored.filter(x => x.hit === tokens.length);   // every word found somewhere
+    if (!matches.length && tokens.length > 1) {                   // fallback: at least one word
+      matches = scored.filter(x => x.hit > 0);
+      if (matches.length) note = 'No exact match — showing the closest ones.';
+    }
+    matches.sort((a, b) => b.total - a.total || a.it.sortKey.localeCompare(b.it.sortKey));
+    shown = matches.map(x => x.it);
+  } else {
+    shown = all.slice().sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  }
+
+  document.getElementById('gloss-count-badge').textContent =
+    tokens.length ? `${shown.length} of ${all.length}` : String(all.length);
+  document.getElementById('gloss-note').textContent = note;
+
+  if (!shown.length) {
+    listEl.innerHTML = tokens.length
+      ? `<div class="gloss-empty">Nothing found for “${escHtml(q.trim())}”.<br>Try fewer or different words.</div>`
+      : `<div class="gloss-empty">No expressions yet — add the first one!</div>`;
+    return;
+  }
+
+  listEl.innerHTML = shown.map(it => {
+    // Hover card: meaning first; if empty, fall back to the submitter's comment
+    const text  = it.definition || it.comment;
+    const label = it.definition ? '📖 Meaning' : '💬 Comment';
+    const short = text.length > 240 ? text.slice(0, 237).trimEnd() + '…' : text;
+    return `<div class="gloss-item" onclick="openGlossaryItem('${it.kind}','${it.id}')">
+      <span class="gloss-expr">${escHtml(it.display)}</span>
+      <span class="gloss-by">${escHtml(it.username)}</span>
+      ${text ? `<div class="gloss-hover"><div class="def-label">${label}</div><p>${escHtml(short)}</p></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function clearGlossarySearch() {
+  const el = document.getElementById('gloss-search');
+  el.value = '';
+  renderGlossary();
+  el.focus();
+}
+
+function openGlossaryItem(kind, id) {
+  if (kind === 'sub') openCardModal(id);   // exact same popup as All Expressions
+  else openGlossaryEntryModal(id);
+}
+
+// Detail popup for glossary-only entries (reuses the card modal)
+async function openGlossaryEntryModal(id) {
+  const g = glossaryCustom.find(x => x._id === id);
+  if (!g) return;
+  activeSubId = id;
+  document.getElementById('modal-expr').textContent = `"${g.expression}"`;
+  document.getElementById('modal-user').textContent = g.username + ' · Glossary';
+
+  const ttsBtn = document.getElementById('modal-tts-btn');
+  ttsBtn.textContent = '🔊';
+  ttsBtn.classList.remove('speaking');
+
+  let details = '';
+  if (g.definition) details += `<div class="def-block"><div class="def-label">📖 Meaning</div><p>${escHtml(g.definition)}</p></div>`;
+  const safeLink = g.link && /^https?:\/\//i.test(g.link) ? g.link : '';
+  if (safeLink || g.userComment) {
+    details += '<div class="meta-row">';
+    if (safeLink)      details += `<div class="meta-chip">🔗 <a href="${escHtml(safeLink)}" target="_blank" rel="noopener">Example link</a></div>`;
+    if (g.userComment) details += `<div class="meta-chip">💬 ${escHtml(g.userComment)}</div>`;
+    details += '</div>';
+  }
+  if (currentUser && String(g.userId) === String(currentUser._id)) {
+    details += `<div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="openGlossaryForm('${g._id}')">✏️ Edit</button>
+      <button class="btn btn-sm" style="background:transparent;border:1.5px solid var(--danger);color:var(--danger)" onclick="deleteGlossaryEntry('${g._id}')">🗑 Delete</button>
+    </div>`;
+  }
+  document.getElementById('modal-details').innerHTML = details;
+  document.getElementById('new-comment-avatar').textContent = currentUser ? currentUser.username.slice(0,2).toUpperCase() : '?';
+
+  await loadComments(id);
+  openModal('card-modal');
+}
+
+function openGlossaryForm(editId) {
+  glossaryEditId = editId || '';
+  const g = editId ? glossaryCustom.find(x => x._id === editId) : null;
+  if (editId && !g) return;
+  if (editId) closeModal('card-modal');
+  document.getElementById('gl-title').textContent = g ? 'Edit Glossary entry' : 'Add to Glossary';
+  document.getElementById('gl-expr').value    = g ? g.expression : '';
+  document.getElementById('gl-link').value    = g ? (g.link || '') : '';
+  document.getElementById('gl-comment').value = g ? (g.userComment || '') : '';
+  document.getElementById('gl-error').textContent = '';
+  openModal('glossary-modal');
+}
+
+function submitGlossaryForm() {
+  const expression  = document.getElementById('gl-expr').value.trim();
+  const link        = document.getElementById('gl-link').value.trim();
+  const userComment = document.getElementById('gl-comment').value.trim();
+  const errEl       = document.getElementById('gl-error');
+  errEl.textContent = '';
+  if (!expression) { errEl.textContent = 'Please enter an expression.'; return; }
+  if (link && !/^https?:\/\//i.test(link)) { errEl.textContent = 'The link should start with http:// or https://'; return; }
+
+  // Same flow as regular submissions: pick a meaning first, then save
+  pendingSubmissionPayload = { glossary: true, expression, link, userComment, editId: glossaryEditId };
+  closeModal('glossary-modal');
+  openMeaningModal(expression);
+}
+
+async function saveGlossaryEntry(p, definition) {
+  showToast('Saving to Glossary…', 'loading');
+  try {
+    const isEdit = !!p.editId;
+    const r = await fetch(API_BASE + '/api/glossary' + (isEdit ? '/' + p.editId : ''), {
+      method: isEdit ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUser._id, expression: p.expression, definition,
+        link: p.link, userComment: p.userComment
+      })
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      showToast(d.error || 'Could not save.', 'error');
+      return;
+    }
+    await loadGlossary();
+    showToast(definition ? '✓ Saved with meaning!' : '✓ Saved!', 'success');
+  } catch(e) {
+    showToast('Could not save. Check your connection.', 'error');
+  }
+}
+
+async function deleteGlossaryEntry(id) {
+  if (!confirm('Delete this Glossary entry? This cannot be undone.')) return;
+  try {
+    const r = await fetch(API_BASE + '/api/glossary/' + id + '?userId=' + encodeURIComponent(currentUser._id), { method: 'DELETE' });
+    if (!r.ok) { showToast('Could not delete. Try again.', 'error'); return; }
+    closeModal('card-modal');
+    await loadGlossary();
+    showToast('Entry deleted', 'success');
+  } catch(e) { showToast('Could not reach server.', 'error'); }
 }
 
 // ── Profile tab ───────────────────────────────────────────────────────
@@ -2034,6 +2338,7 @@ async function saveProfileInfo() {
     refreshHeaderAvatar();
     renderProfileTab();
     await loadAll();
+    await loadGlossary();
     renderMySubmissions();
     msgEl.textContent = '✓ Saved!';
     msgEl.className = 'success-msg';

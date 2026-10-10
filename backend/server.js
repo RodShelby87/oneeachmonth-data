@@ -58,10 +58,22 @@ const notificationSchema = new mongoose.Schema({
   viewedAt:  { type: Date, default: null }
 });
 
+// Entries that only live in the Glossary tab (not tied to any month)
+const glossarySchema = new mongoose.Schema({
+  userId:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  username:    { type: String, required: true },
+  expression:  { type: String, required: true },
+  definition:  { type: String, default: '' },
+  link:        { type: String, default: '' },
+  userComment: { type: String, default: '' },
+  createdAt:   { type: Date, default: Date.now }
+});
+
 const User         = mongoose.model('User',         userSchema);
 const Submission   = mongoose.model('Submission',   submissionSchema);
 const Comment      = mongoose.model('Comment',      commentSchema);
 const Notification = mongoose.model('Notification', notificationSchema);
+const GlossaryEntry = mongoose.model('GlossaryEntry', glossarySchema);
 
 // ── GitHub sync ──────────────────────────────────────────────────────
 async function syncToGitHub(data) {
@@ -511,6 +523,7 @@ app.put('/api/users/:id', async (req, res) => {
     if (!oldUser) return res.status(404).json({ error: 'User not found' });
     const user = await User.findByIdAndUpdate(req.params.id, { username, email }, { new: true });
     await Submission.updateMany({ userId: req.params.id }, { username });
+    await GlossaryEntry.updateMany({ userId: req.params.id }, { username });
     if (oldUser.username !== username) {
       await Comment.updateMany({ username: oldUser.username }, { username });
     }
@@ -533,6 +546,12 @@ app.delete('/api/users/:id', async (req, res) => {
     for (const sub of subs) await Comment.deleteMany({ subId: sub._id });
     await Submission.deleteMany({ userId: req.params.id });
     await Comment.deleteMany({ username: user.username });
+
+    // Glossary entries added by this user (and the comments on them)
+    const gl = await GlossaryEntry.find({ userId: req.params.id }).select('_id').lean();
+    await Comment.deleteMany({ subId: { $in: gl.map(g => g._id) } });
+    await GlossaryEntry.deleteMany({ userId: req.params.id });
+
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -619,7 +638,7 @@ app.post('/api/lookup-meaning', async (req, res) => {
     if (!key) return res.status(500).json({ error: 'API key not configured' });
     const queries = [
       expression.toLowerCase().trim(),
-      expression.toLowerCase().replace(/["""'']/g, '').trim(),
+      expression.toLowerCase().replace(/["“”'‘’]/g, '').trim(),
       expression.toLowerCase().split(' ').filter(w => w.length > 3)[0]
     ].filter(Boolean);
     let definition = '';
@@ -666,7 +685,7 @@ app.post('/api/lookup-meaning-options', async (req, res) => {
 
     const queries = [
       expression.toLowerCase().trim(),
-      expression.toLowerCase().replace(/["""'']/g, '').trim(),
+      expression.toLowerCase().replace(/["“”'‘’]/g, '').trim(),
       expression.toLowerCase().split(' ').filter(w => w.length > 3)[0]
     ].filter(Boolean);
 
@@ -703,6 +722,82 @@ app.post('/api/lookup-meaning-options', async (req, res) => {
 app.delete('/api/submissions/:id', async (req, res) => {
   try {
     await Submission.findByIdAndDelete(req.params.id);
+    await Comment.deleteMany({ subId: req.params.id });
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Glossary (entries that only live in the Glossary tab) ─────────────
+// The Glossary tab also lists every regular submission, but those are
+// served by /api/submissions — this only handles glossary-only entries.
+app.get('/api/glossary', async (req, res) => {
+  try {
+    res.json(await GlossaryEntry.find().sort({ expression: 1 }).lean());
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/glossary', async (req, res) => {
+  try {
+    const { userId, expression, definition, link, userComment } = req.body;
+    const expr = (expression || '').trim();
+    if (!userId || !expr) return res.status(400).json({ error: 'Missing fields' });
+
+    // Not .lean() on purpose, so the schema's 'approved' default applies to older users
+    const user = await User.findById(userId);
+    if (!user || user.status === 'pending' || user.status === 'rejected') {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
+
+    const entry = await GlossaryEntry.create({
+      userId,
+      username:    user.username,
+      expression:  expr,
+      definition:  (definition  || '').trim(),
+      link:        (link        || '').trim(),
+      userComment: (userComment || '').trim()
+    });
+
+    // Let everyone else know a new expression landed in the Glossary
+    notifyOtherUsers(
+      user._id,
+      'submission',
+      `${user.username} added "${expr}" to the Glossary`,
+      entry._id
+    );
+
+    res.json(entry);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/glossary/:id', async (req, res) => {
+  try {
+    const { userId, expression, definition, link, userComment } = req.body;
+    const expr = (expression || '').trim();
+    if (!userId || !expr) return res.status(400).json({ error: 'Missing fields' });
+
+    const entry = await GlossaryEntry.findById(req.params.id);
+    if (!entry) return res.status(404).json({ error: 'Entry not found' });
+    if (String(entry.userId) !== String(userId)) {
+      return res.status(403).json({ error: 'You can only edit your own entries' });
+    }
+
+    entry.expression  = expr;
+    entry.definition  = (definition  || '').trim();
+    entry.link        = (link        || '').trim();
+    entry.userComment = (userComment || '').trim();
+    await entry.save();
+    res.json(entry);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/glossary/:id', async (req, res) => {
+  try {
+    const entry = await GlossaryEntry.findById(req.params.id);
+    if (!entry) return res.status(404).json({ error: 'Entry not found' });
+    if (String(entry.userId) !== String(req.query.userId)) {
+      return res.status(403).json({ error: 'You can only delete your own entries' });
+    }
+    await GlossaryEntry.findByIdAndDelete(req.params.id);
     await Comment.deleteMany({ subId: req.params.id });
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -750,6 +845,8 @@ app.post('/api/comments', async (req, res) => {
     const comment = await Comment.create({ subId, text, username, parentId: parentId || null });
 
     try {
+      // Comments on glossary-only entries have no matching Submission,
+      // so this block is simply skipped for them (no notifications).
       const sub = await Submission.findById(subId).lean();
       if (sub) {
         const commenter = await User.findOne({ username }).select('_id').lean();

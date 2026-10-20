@@ -52,6 +52,19 @@
     "username": "Rodri"
   },
   {
+    "_id": "6ad7efb8d15f5a74227e1135",
+    "userId": "6a5ff554f3faaaf8ee3ba727",
+    "month": "2026-10",
+    "expression": "Making do",
+    "__v": 0,
+    "definition": "to get along or manage with the means at hand",
+    "example": "",
+    "link": "",
+    "submittedAt": "2026-10-20T22:48:24.816Z",
+    "userComment": "",
+    "username": "bel"
+  },
+  {
     "_id": "6ac90783eb09be93cbc51076",
     "userId": "6a5ff554f3faaaf8ee3ba727",
     "username": "bel",
@@ -117,19 +130,6 @@
     "submittedAt": "2026-08-11T14:27:41.160Z"
   },
   {
-    "_id": "6a6931689112c2d951ce33e8",
-    "month": "2026-08",
-    "expression": "open a can of worms",
-    "userId": "6a5795428ed29f665d55433e",
-    "__v": 0,
-    "definition": "to create a complicated situation in which doing something to correct a problem leads to many more problems",
-    "example": "",
-    "link": "https://www.instagram.com/reel/C3nP1gfizhM/?igsh=MTlzMno3dno3Y3Q0NQ==",
-    "submittedAt": "2026-07-28T22:47:04.584Z",
-    "userComment": "",
-    "username": "Rodri"
-  },
-  {
     "_id": "6a693b129112c2d951ce3bd9",
     "month": "2026-08",
     "userId": "6a5795428ed29f665d55433e",
@@ -140,6 +140,19 @@
     "link": "https://www.youtube.com/watch?v=kWfpHZIHDf4",
     "submittedAt": "2026-07-28T23:29:09.432Z",
     "userComment": "no excuses, no arguments, and no rule-breaking allowed",
+    "username": "Rodri"
+  },
+  {
+    "_id": "6a6931689112c2d951ce33e8",
+    "month": "2026-08",
+    "expression": "open a can of worms",
+    "userId": "6a5795428ed29f665d55433e",
+    "__v": 0,
+    "definition": "to create a complicated situation in which doing something to correct a problem leads to many more problems",
+    "example": "",
+    "link": "https://www.instagram.com/reel/C3nP1gfizhM/?igsh=MTlzMno3dno3Y3Q0NQ==",
+    "submittedAt": "2026-07-28T22:47:04.584Z",
+    "userComment": "",
     "username": "Rodri"
   },
   {
